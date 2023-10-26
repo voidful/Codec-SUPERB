@@ -1,22 +1,16 @@
 from codec.general import save_audio
-import dac
+
 from audiotools import AudioSignal
 
 
 class Codec:
     def __init__(self, pretrained_model_name="descript-audio-codec"):
+        # Reference: https://github.com/descriptinc/descript-audio-codec
+        try:
+            import dac
+        except:
+            raise Exception("Please install descript-audio-codec first. pip install descript-audio-codec")
 
-        ''' 
-        Reference: https://github.com/descriptinc/descript-audio-codec
-        
-        pip install descript-audio-codec 
-
-        or
-
-        pip install git+https://github.com/descriptinc/descript-audio-codec
-
-        '''
-        
         # Load model.
         self.model_path = dac.utils.download(model_type="44khz")
         self.model = dac.DAC.load(self.model_path)
@@ -25,7 +19,6 @@ class Codec:
 
         # Sample rate.
         self.sampling_rate = 44_100
-
 
     def synth(self, data):
 
@@ -44,7 +37,7 @@ class Codec:
         decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
 
         # Save audio.
-        audio_path = f"dummy/{data['id']}.wav"
+        audio_path = f"dummy-descript-audio-codec/{data['id']}.wav"
         save_audio(decompressed_audio, audio_path, self.sampling_rate)
         data['audio'] = audio_path
 

@@ -1,8 +1,26 @@
-import torch
+import os
+
+import numpy as np
 import torchaudio
+
+import torch
+
+
+def pad_arrays_to_match(array1, array2):
+    shape1, shape2 = array1.shape, array2.shape
+    if len(shape1) != len(shape2):
+        raise ValueError("The two arrays must have the same number of dimensions")
+    padding1 = [(0, max(dim_size2 - dim_size1, 0)) for dim_size1, dim_size2 in zip(shape1, shape2)]
+    padding2 = [(0, max(dim_size1 - dim_size2, 0)) for dim_size1, dim_size2 in zip(shape1, shape2)]
+    array1_padded = np.pad(array1, padding1, mode='constant')
+    array2_padded = np.pad(array2, padding2, mode='constant')
+    return array1_padded, array2_padded
 
 
 def save_audio(wav: torch.Tensor, path, sample_rate: int, rescale: bool = False):
+    folder_path = os.path.dirname(path)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
     limit = 0.99
     max_val = wav.abs().max()
     wav = wav * min(limit / max_val, 1) if rescale else wav.clamp(-limit, limit)
