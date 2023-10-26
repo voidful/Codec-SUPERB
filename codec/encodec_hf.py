@@ -14,7 +14,7 @@ class Codec:
         encoder_outputs = self.model.encode(inputs["input_values"], inputs["padding_mask"])
         audio_values = \
         self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, inputs["padding_mask"])[0]
-        audio_path = f"dummy/{data['id']}.wav"
+        audio_path = f"dummy-encodec-24khz/{data['id']}.wav"
         save_audio(audio_values[0], audio_path, self.sampling_rate)
         data['audio'] = audio_path
         return data
