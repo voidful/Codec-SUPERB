@@ -4,6 +4,7 @@ import torch
 from audiotools import AudioSignal
 from audiotools import STFTParams
 from torch import nn
+import torchaudio
 
 
 class L1Loss(nn.L1Loss):
@@ -184,3 +185,17 @@ class MelSpectrogramLoss(nn.Module):
             )
             loss += self.mag_weight * self.loss_fn(x_mels, y_mels)
         return loss
+
+class SignalToNoiseRatioLoss(nn.Module):
+    def __init__(self, attribute='audio_data', weight=1.0):
+        super(SignalToNoiseRatioLoss, self).__init__()
+        self.attribute = attribute
+        self.weight = weight
+
+    def forward(self, x: AudioSignal, y: AudioSignal):
+        x_audio = getattr(x, self.attribute)
+        y_audio = getattr(y, self.attribute)
+
+        noise = x_audio - y_audio
+        snr = 10 * torch.log10(torch.sum(x_audio ** 2) / torch.sum(noise ** 2))
+        return self.weight * snr

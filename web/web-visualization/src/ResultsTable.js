@@ -1,29 +1,32 @@
-import React from 'react'
-import { useTable } from 'react-table'
-import './ResultsTable.css'
+import React from 'react';
+import { useTable } from 'react-table';
+import './ResultsTable.css';
 
-const ResultsTable = ({ results }) => {
+const ResultsTable = ({ dataset, results }) => {
   const data = React.useMemo(() => {
-    return Object.entries(results.librispeech_asr_dummy).map(([key, value]) => {
+    if (!results[dataset]) return [];
+    return Object.entries(results[dataset]).map(([key, value]) => {
       return {
         col1: key,
         ...value,
-      }
-    })
-  }, [results])
+      };
+    });
+  }, [dataset, results]);
 
   const columns = React.useMemo(() => {
+    if (!results[dataset]) return [];
+    const firstKey = Object.keys(results[dataset])[0];
     return [
       {
         Header: 'Model',
-        accessor: 'col1', // accessor is the "key" in the data
+        accessor: 'col1',
       },
-      ...Object.keys(results.librispeech_asr_dummy.descript_audio_codec).map(key => ({
+      ...Object.keys(results[dataset][firstKey]).map((key) => ({
         Header: key.toUpperCase(),
         accessor: key,
       })),
-    ]
-  }, [results])
+    ];
+  }, [dataset, results]);
 
   const {
     getTableProps,
@@ -31,7 +34,7 @@ const ResultsTable = ({ results }) => {
     headerGroups,
     rows,
     prepareRow,
-  } = useTable({ columns, data })
+  } = useTable({ columns, data });
 
   return (
     <table {...getTableProps()} style={{ border: 'solid 1px blue' }}>
@@ -76,7 +79,7 @@ const ResultsTable = ({ results }) => {
         })}
       </tbody>
     </table>
-  )
-}
+  );
+};
 
-export default ResultsTable
+export default ResultsTable;
