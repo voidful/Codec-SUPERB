@@ -1,13 +1,13 @@
 from audiotools import AudioSignal
 from audiotools import metrics
 
-from loss import L1Loss, MultiScaleSTFTLoss, MelSpectrogramLoss, SISDRLoss
+from loss import L1Loss, MultiScaleSTFTLoss, MelSpectrogramLoss, SISDRLoss, SpectrogramErrorLoss, SignalToNoiseRatioLoss
 
 waveform_loss = L1Loss()
 stft_loss = MultiScaleSTFTLoss()
 mel_loss = MelSpectrogramLoss()
 sisdr_loss = SISDRLoss()
-
+snr_loss = SignalToNoiseRatioLoss()
 
 def get_metrics(signal, recons):
     if isinstance(signal, str):
@@ -26,6 +26,7 @@ def get_metrics(signal, recons):
             f"sisdr": sisdr_loss(x, y).cpu().detach().item(),
             f"visqol-audio": metrics.quality.visqol(x, y).cpu().detach().item(),
             f"visqol-speech": metrics.quality.visqol(x, y, "speech").cpu().detach().item(),
+            f"snr": snr_loss(x, y).cpu().detach().item()
         }
     )
     return output
