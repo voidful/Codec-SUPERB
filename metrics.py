@@ -1,7 +1,7 @@
 from audiotools import AudioSignal
 from audiotools import metrics
 
-from loss import L1Loss, MultiScaleSTFTLoss, MelSpectrogramLoss, SISDRLoss, SpectrogramErrorLoss, SignalToNoiseRatioLoss
+from loss import L1Loss, MultiScaleSTFTLoss, MelSpectrogramLoss, SISDRLoss, SignalToNoiseRatioLoss # SpectrogramErrorLoss
 
 waveform_loss = L1Loss()
 stft_loss = MultiScaleSTFTLoss()
