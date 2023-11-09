@@ -12,10 +12,9 @@
 
 ## Criteria
 
-### Signal-to-Noise Ratio (SNR)
+### Waveform
 
-The Signal-to-Noise Ratio is derived from the power difference between the signal and noise, with higher values
-indicating better audio quality.
+L1Loss in waveform
 
 ### ViSQOL
 
@@ -31,8 +30,3 @@ The Mel Distance is the distance between the log mel spectrograms of the reconst
 This metric calculates the distance between the log magnitude spectrograms of the reconstructed and ground truth
 waveforms, using window lengths of [2048, 512], and is better at capturing fidelity in higher frequencies compared to
 the Mel Distance.
-
-### Scale-invariant Source-to-Distortion Ratio (SI-SDR)
-
-SI-SDR measures the distance between waveforms in a way similar to the Signal-to-Noise Ratio but is invariant to scale
-differences, providing insights into the quality of the phase reconstruction of the audio.
