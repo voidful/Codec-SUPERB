@@ -2,6 +2,7 @@ import argparse
 import json
 
 from datasets import load_dataset, DownloadMode
+from dataset import load_dataset_from_local
 from collections import defaultdict
 from audiotools import AudioSignal
 
@@ -10,8 +11,12 @@ from codec.general import pad_arrays_to_match
 from metrics import get_metrics
 
 
-def evaluate_dataset(dataset_name):
-    c = load_dataset(dataset_name, download_mode=DownloadMode.FORCE_REDOWNLOAD)
+def evaluate_dataset(dataset_name, download_path):
+    if dataset_name in ['audioset', 'musdb18']:
+        c = load_dataset_from_local(dataset_name, download_path)
+    else:
+        c = load_dataset(dataset_name)
+        # c = load_dataset(dataset_name, download_mode=DownloadMode.FORCE_REDOWNLOAD)
 
     models = [key for key in c.keys() if key != "original"]
 
@@ -55,7 +60,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate audio datasets.')
     parser.add_argument('--dataset', type=str, default="AudioDecBenchmark/librispeech_asr_dummy",
                         help='Name of the dataset to evaluate')
+    parser.add_argument('--download_path', type=str, default=None,
+                        help='Path to downloaded dataset')
 
     args = parser.parse_args()
 
-    evaluate_dataset(args.dataset)
+    evaluate_dataset(args.dataset, args.download_path)
