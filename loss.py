@@ -5,7 +5,10 @@ from audiotools import AudioSignal
 from audiotools import STFTParams
 from torch import nn
 import torchaudio
+from scipy.linalg import toeplitz, norm
+from scipy import signal
 from pesq import pesq
+import numpy as np
 import numpy
 
 
@@ -51,7 +54,7 @@ class STOI(nn.Module):
             stoi_score = pesq(ref, est, sample_rate)
             stoi_scores.append(stoi_score)
 
-        return sum(pesq_scores) / len(pesq_scores)
+        return sum(stoi_scores) / len(stoi_scores)
 
 
 class L1Loss(nn.L1Loss):
@@ -321,3 +324,131 @@ def stoi(x, y, fs_signal):
         d_interm.mean()
     )  # combine all intermediate intelligibility measures as in Eq.(4) [1]
     return d
+
+
+def stdft(x, N, K, N_fft):
+    """
+    X_STDFT = X_STDFT(X, N, K, N_FFT) returns the short-time hanning-windowed dft of X with frame-size N,
+    overlap K and DFT size N_FFT. The columns and rows of X_STDFT denote the frame-index and dft-bin index,
+    respectively.
+    """
+    frames_size = int((np.size(x) - N) / K)
+    w = signal.windows.hann(N + 2)
+    w = w[1 : N + 1]
+
+    x_stdft = signal.stft(
+        x,
+        window=w,
+        nperseg=N,
+        noverlap=K,
+        nfft=N_fft,
+        return_onesided=False,
+        boundary=None,
+    )[2]
+    x_stdft = np.transpose(x_stdft)[0:frames_size, :]
+
+    return x_stdft
+
+
+def thirdoct(fs, N_fft, numBands, mn):
+    """
+    [A CF] = THIRDOCT(FS, N_FFT, NUMBANDS, MN) returns 1/3 octave band matrix
+    inputs:
+        FS:         samplerate
+        N_FFT:      FFT size
+        NUMBANDS:   number of bands
+        MN:         center frequency of first 1/3 octave band
+    outputs:
+        A:          octave band matrix
+        CF:         center frequencies
+    """
+    f = np.linspace(0, fs, N_fft + 1)
+    f = f[0 : int(N_fft / 2 + 1)]
+    k = np.arange(numBands)
+    cf = np.multiply(np.power(2, k / 3), mn)
+    fl = np.sqrt(
+        np.multiply(
+            np.multiply(np.power(2, k / 3), mn),
+            np.multiply(np.power(2, (k - 1) / 3), mn),
+        )
+    )
+    fr = np.sqrt(
+        np.multiply(
+            np.multiply(np.power(2, k / 3), mn),
+            np.multiply(np.power(2, (k + 1) / 3), mn),
+        )
+    )
+    A = np.zeros((numBands, len(f)))
+
+    for i in range(np.size(cf)):
+        b = np.argmin((f - fl[i]) ** 2)
+        fl[i] = f[b]
+        fl_ii = b
+
+        b = np.argmin((f - fr[i]) ** 2)
+        fr[i] = f[b]
+        fr_ii = b
+        A[i, fl_ii:fr_ii] = 1
+
+    rnk = np.sum(A, axis=1)
+    end = np.size(rnk)
+    rnk_back = rnk[1:end]
+    rnk_before = rnk[0 : (end - 1)]
+    for i in range(np.size(rnk_back)):
+        if (rnk_back[i] >= rnk_before[i]) and (rnk_back[i] != 0):
+            result = i
+    numBands = result + 2
+    A = A[0:numBands, :]
+    cf = cf[0:numBands]
+    return A, cf
+
+
+def removeSilentFrames(x, y, dyrange, N, K):
+    """
+    [X_SIL Y_SIL] = REMOVESILENTFRAMES(X, Y, RANGE, N, K) X and Y are segmented with frame-length N
+    and overlap K, where the maximum energy of all frames of X is determined, say X_MAX.
+    X_SIL and Y_SIL are the reconstructed signals, excluding the frames, where the energy of a frame
+    of X is smaller than X_MAX-RANGE
+    """
+
+    frames = np.arange(0, (np.size(x) - N), K)
+    w = signal.windows.hann(N + 2)
+    w = w[1 : N + 1]
+
+    jj_list = np.empty((np.size(frames), N), dtype=int)
+    for j in range(np.size(frames)):
+        jj_list[j, :] = np.arange(frames[j] - 1, frames[j] + N - 1)
+
+    msk = 20 * np.log10(np.divide(norm(np.multiply(x[jj_list], w), axis=1), np.sqrt(N)))
+
+    msk = (msk - np.max(msk) + dyrange) > 0
+    count = 0
+
+    x_sil = np.zeros(np.size(x))
+    y_sil = np.zeros(np.size(y))
+
+    for j in range(np.size(frames)):
+        if msk[j]:
+            jj_i = np.arange(frames[j], frames[j] + N)
+            jj_o = np.arange(frames[count], frames[count] + N)
+            x_sil[jj_o] = x_sil[jj_o] + np.multiply(x[jj_i], w)
+            y_sil[jj_o] = y_sil[jj_o] + np.multiply(y[jj_i], w)
+            count = count + 1
+
+    x_sil = x_sil[0 : jj_o[-1] + 1]
+    y_sil = y_sil[0 : jj_o[-1] + 1]
+    return x_sil, y_sil
+
+
+def taa_corr(x, y):
+    """
+    RHO = TAA_CORR(X, Y) Returns correlation coeffecient between column
+    vectors x and y. Gives same results as 'corr' from statistics toolbox.
+    """
+    xn = np.subtract(x, np.mean(x, axis=1, keepdims=True))
+    xn = np.divide(xn, norm(xn, axis=1, keepdims=True))
+    yn = np.subtract(y, np.mean(y, axis=1, keepdims=True))
+    yn = np.divide(yn, norm(yn, axis=1, keepdims=True))
+    rho = np.trace(np.matmul(xn, np.transpose(yn)))
+
+    return rho
