@@ -31,7 +31,8 @@ def evaluate_dataset(dataset_name):
                 entry['metrics'] = metrics
                 return entry
 
-            cal_metrics_ds = c['original'].map(compute_metrics, num_proc=10, load_from_cache_file=False)
+            cal_metrics_ds = c['original'].map(compute_metrics, num_proc=1, load_from_cache_file=False)
+            # cal_metrics_ds = compute_metrics(c['original'])
 
             result_dict = defaultdict(list)
             for ds_item in cal_metrics_ds:

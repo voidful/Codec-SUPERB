@@ -19,8 +19,8 @@ class PESQ(nn.Module):
 
     def forward(self, x: AudioSignal, y: AudioSignal, sample_rate: int = 16000):
 
-        references = x.resample(sample_rate).audio_data.cpu().detach().numpy()
-        estimates = y.resample(sample_rate).audio_data.cpu().detach().numpy()
+        references = x.resample(sample_rate).audio_data.squeeze(0).cpu().detach().numpy()
+        estimates = y.resample(sample_rate).audio_data.squeeze(0).cpu().detach().numpy()
 
         if len(references.shape) == 1 and len(estimates.shape) == 1:
             references = numpy.expand_dims(references, axis=0)
@@ -42,8 +42,8 @@ class STOI(nn.Module):
 
     def forward(self, x: AudioSignal, y: AudioSignal, sample_rate: int):
 
-        references = x.audio_data.cpu().detach().numpy()
-        estimates = y.audio_data.cpu().detach().numpy()
+        references = x.audio_data.squeeze(0).cpu().detach().numpy()
+        estimates = y.audio_data.squeeze(0).cpu().detach().numpy()
 
         if len(references.shape) == 1 and len(estimates.shape) == 1:
             references = numpy.expand_dims(references, axis=0)
@@ -51,7 +51,7 @@ class STOI(nn.Module):
 
         stoi_scores = []
         for ref, est in zip(references, estimates):
-            stoi_score = pesq(ref, est, sample_rate)
+            stoi_score = stoi(ref, est, sample_rate)
             stoi_scores.append(stoi_score)
 
         return sum(stoi_scores) / len(stoi_scores)
