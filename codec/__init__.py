@@ -1,7 +1,6 @@
 import os
 
 import codec.general
-import codec.encodec_hf
 
 
 def load_codec(codec_name):

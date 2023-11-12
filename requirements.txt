@@ -1,13 +1,9 @@
 transformers==4.31.0
 speechtokenizer==0.1.2
-torch==1.12.1+cu113 
---extra-index-url https://download.pytorch.org/whl/cu113
-torchaudio==0.12.1 
---extra-index-url https://download.pytorch.org/whl/cu113
 tokenizers==0.13.3
 datasets==2.14.6
 nlp2==1.8.52
 soundfile==0.12.1
 librosa==0.10.1
 descript-audio-codec
-descript-audiotools @ git+https://github.com/descriptinc/audiotools@784f87b7679daee82ee7bb25770d5bd51a977bb6
+descript-audiotools
