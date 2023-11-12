@@ -1,6 +1,6 @@
 import nlp2
 
-from base_codec.funcodec import BaseCodec
+from codec.base_codec.funcodec import BaseCodec
 
 
 class Codec(BaseCodec):
