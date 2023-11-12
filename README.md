@@ -8,7 +8,6 @@
 - https://github.com/yangdongchao/AcademiCodec
 - https://github.com/facebookresearch/AudioDec
 - https://github.com/alibaba-damo-academy/FunCodec
-- https://github.com/mct10/RepCodec
 
 ## Criteria
 
