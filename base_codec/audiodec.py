@@ -44,9 +44,9 @@ class BaseCodec:
 
     def synth(self, data):
         codes = self.extract_unit(data, directly_unit=True)
+        codebook_size = self.model.rx_encoder.quantizer.codebook.codebook_size
         for y, code in enumerate(codes):
-            code += int(y * self.model.rx_encoder.quantizer.codebook.codebook_size)
-
+            codes[y] += int(y * codebook_size)
         codes = codes.squeeze(0)
         with torch.no_grad():
             zq = self.model.rx_encoder.lookup(codes)
@@ -64,7 +64,7 @@ class BaseCodec:
             zq, codes = self.model.tx_encoder.quantizer.codebook.forward_index(z.transpose(2, 1), flatten_idx=False)
             if len(codes.shape) == 2:
                 codes = codes.unsqueeze(1)
-            codes = codes.transpose(0, 1)
+            codes = codes.transpose(0, 1).squeeze()
             if directly_unit:
                 return codes
             return zq, codes
