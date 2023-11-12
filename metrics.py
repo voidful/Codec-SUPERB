@@ -6,7 +6,6 @@ from loss import (
     MultiScaleSTFTLoss,
     MelSpectrogramLoss,
     SISDRLoss,
-    SpectrogramErrorLoss,
     SignalToNoiseRatioLoss,
     PESQ,
     STOI,
@@ -35,11 +34,11 @@ def get_metrics(signal, recons):
             f"mel": mel_loss(x, y).cpu().detach().item(),
             f"stft": stft_loss(x, y).cpu().detach().item(),
             f"waveform": waveform_loss(x, y).cpu().detach().item(),
-            f"visqol-audio": metrics.quality.visqol(x, y).cpu().detach().item(),
-            f"visqol-speech": metrics.quality.visqol(x, y, "speech")
-            .cpu()
-            .detach()
-            .item(),
+            # f"visqol-audio": metrics.quality.visqol(x, y).cpu().detach().item(),
+            # f"visqol-speech": metrics.quality.visqol(x, y, "speech")
+            # .cpu()
+            # .detach()
+            # .item(),
             f"pesq": pesqfn(x, y),
             f"stoi": stoifn(x, y, x.sample_rate),
         }
