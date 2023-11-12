@@ -23,14 +23,14 @@ class BaseCodec:
         self.sampling_rate = 44100
 
     def synth(self, data):
-        compressed_audio = self.extract_unit(data, directly_unit=False)
+        compressed_audio = self.extract_unit(data, return_unit_only=False)
         decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
         audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
         save_audio(decompressed_audio, audio_path, self.sampling_rate)
         data['audio'] = audio_path
         return data
 
-    def extract_unit(self, data, directly_unit=False):
+    def extract_unit(self, data, return_unit_only=True):
         audio_path = data["audio"]["path"]
         audio_signal = AudioSignal(audio_path)
 
@@ -38,6 +38,6 @@ class BaseCodec:
             audio_signal.resample(self.sampling_rate)
 
         compressed_audio = self.model.compress(audio_signal)
-        if directly_unit:
-            return compressed_audio.codes.squeeze(0).cpu().numpy()
+        if return_unit_only:
+            return compressed_audio.codes.squeeze(0)
         return compressed_audio

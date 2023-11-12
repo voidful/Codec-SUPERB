@@ -10,21 +10,25 @@ class BaseCodec:
             from speechtokenizer import SpeechTokenizer
         except:
             raise Exception("Please install SpeechTokenizer first. pip install -U speechtokenizer")
+
         self.config()
-        nlp2.download_file(
-            'https://huggingface.co/fnlp/SpeechTokenizer/raw/main/speechtokenizer_hubert_avg/config.json',
-            'speechtokenizer_hubert_avg')
-        self.config_path = "speechtokenizer_hubert_avg/config.json"
-        nlp2.download_file(
-            'https://huggingface.co/fnlp/SpeechTokenizer/resolve/main/speechtokenizer_hubert_avg/SpeechTokenizer.pt',
-            "speechtokenizer_hubert_avg")
-        self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
         self.model = SpeechTokenizer.load_from_checkpoint(self.config_path, self.ckpt_path)
         self.model.eval()
         self.sampling_rate = self.model.sample_rate
 
+    def config(self):
+        nlp2.download_file(
+            'https://huggingface.co/fnlp/SpeechTokenizer/raw/main/speechtokenizer_hubert_avg/config.json',
+            'speechtokenizer_hubert_avg')
+        self.config_path = "speechtokenizer_hubert_avg/config.json"
+
+        nlp2.download_file(
+            'https://huggingface.co/fnlp/SpeechTokenizer/resolve/main/speechtokenizer_hubert_avg/SpeechTokenizer.pt',
+            "speechtokenizer_hubert_avg")
+        self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
+
     def synth(self, data):
-        codes = self.extract_unit(data, directly_unit=False)
+        codes = self.extract_unit(data, return_unit_only=False)
         RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
         RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
         # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
@@ -35,7 +39,7 @@ class BaseCodec:
         data['audio'] = audio_path
         return data
 
-    def extract_unit(self, data, directly_unit=False):
+    def extract_unit(self, data, return_unit_only=True):
         audio_path = data["audio"]["path"]
         wav, sampling_rate = torchaudio.load(audio_path)
         if sampling_rate != self.sampling_rate:
@@ -43,6 +47,7 @@ class BaseCodec:
         wav = wav.unsqueeze(0)
         with torch.no_grad():
             codes = self.model.encode(wav)
-        if directly_unit:
-            return codes
+        if return_unit_only:
+            # swap dim 0 and 1, and squeeze dim 0
+            return codes.permute(1, 0, 2).squeeze(0)
         return codes

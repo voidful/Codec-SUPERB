@@ -43,11 +43,8 @@ class BaseCodec:
         self.model = audiodec
 
     def synth(self, data):
-        codes = self.extract_unit(data, directly_unit=True)
-        codebook_size = self.model.rx_encoder.quantizer.codebook.codebook_size
-        for y, code in enumerate(codes):
-            codes[y] += int(y * codebook_size)
-        codes = codes.squeeze(0)
+        codes = self.extract_unit(data, return_unit_only=True)
+
         with torch.no_grad():
             zq = self.model.rx_encoder.lookup(codes)
             y = self.model.decoder.decode(zq)
@@ -56,7 +53,7 @@ class BaseCodec:
             data['audio'] = audio_path
             return data
 
-    def extract_unit(self, data, directly_unit=False):
+    def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
             x = torch.from_numpy(data['audio']['array']).unsqueeze(0).unsqueeze(0).to(torch.float32).to(self.device)
             self.model.tx_encoder.reset_buffer()
@@ -65,6 +62,10 @@ class BaseCodec:
             if len(codes.shape) == 2:
                 codes = codes.unsqueeze(1)
             codes = codes.transpose(0, 1).squeeze()
-            if directly_unit:
+            codebook_size = self.model.rx_encoder.quantizer.codebook.codebook_size
+            for y, code in enumerate(codes):
+                codes[y] += int(y * codebook_size)
+            codes = codes.squeeze(0)
+            if return_unit_only:
                 return codes
             return zq, codes

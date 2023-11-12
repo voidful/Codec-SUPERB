@@ -1,4 +1,5 @@
 import nlp2
+import torch
 
 from codec.general import save_audio
 from audiotools import AudioSignal
@@ -28,13 +29,13 @@ class BaseCodec:
         self.ckpt_path = f"{self.setting}/model.pth"
 
     def synth(self, data):
-        extract_data = self.extract_unit(data, directly_unit=False)
+        extract_data = self.extract_unit(data, return_unit_only=False)
         audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
         save_audio(extract_data["recon_speech"][0], audio_path, self.sampling_rate)
         data['audio'] = audio_path
         return data
 
-    def extract_unit(self, data, directly_unit=False):
+    def extract_unit(self, data, return_unit_only=True):
         audio_path = data["audio"]["path"]
         audio_signal = AudioSignal(audio_path)
 
@@ -42,6 +43,6 @@ class BaseCodec:
             audio_signal.resample(self.sampling_rate)
 
         code_indices, code_embeddings, recon_speech, sub_quants = self.model(audio_signal.audio_data[0])
-        if directly_unit:
-            return code_indices
+        if return_unit_only:
+            return code_indices[0].permute(1, 0, 2).squeeze(0)
         return {"code_indices": code_indices, "code_embeddings": code_embeddings, "recon_speech": recon_speech}
