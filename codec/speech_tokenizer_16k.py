@@ -1,4 +1,4 @@
-from base_codec.speech_tokenizer import BaseCodec
+from codec.base_codec.speech_tokenizer import BaseCodec
 import nlp2
 
 class Codec(BaseCodec):
