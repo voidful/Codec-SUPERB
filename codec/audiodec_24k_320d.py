@@ -1,5 +1,5 @@
 from codec.base_codec.audiodec import BaseCodec
-
+import nlp2
 
 class Codec(BaseCodec):
     def config(self):
