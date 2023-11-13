@@ -42,22 +42,24 @@ class BaseCodec:
             self.sampling_rate = config['sampling_rate']
 
     def synth(self, data):
-        acoustic_token = self.extract_unit(data, return_unit_only=False)
-        audio_values = self.model(acoustic_token)
-        audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-        save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
-        data['audio'] = audio_path
-        return data
+        with torch.no_grad():
+            acoustic_token = self.extract_unit(data, return_unit_only=False)
+            audio_values = self.model(acoustic_token)
+            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+            save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+            return data
 
     def extract_unit(self, data, return_unit_only=True):
-        audio_sample = data["audio"]["array"]
-        wav = normalize(audio_sample) * 0.95
-        wav = torch.tensor(wav, dtype=torch.float32)
-        wav = wav.unsqueeze(0).to('cuda')
-        acoustic_token = self.model.encode(wav)
-        if return_unit_only:
-            return acoustic_token.squeeze(0).permute(1, 0)
-        return acoustic_token
+        with torch.no_grad():
+            audio_sample = data["audio"]["array"]
+            wav = normalize(audio_sample) * 0.95
+            wav = torch.tensor(wav, dtype=torch.float32)
+            wav = wav.unsqueeze(0).to('cuda')
+            acoustic_token = self.model.encode(wav)
+            if return_unit_only:
+                return acoustic_token.squeeze(0).permute(1, 0)
+            return acoustic_token
 
 
 class AttrDict(dict):
