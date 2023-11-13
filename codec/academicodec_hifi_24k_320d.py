@@ -1,6 +1,6 @@
 import json
 import nlp2
-from codec.base_codec.academicodec import BaseCodec
+from base_codec.academicodec import BaseCodec
 
 
 class Codec(BaseCodec):
