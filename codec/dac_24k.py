@@ -1,4 +1,4 @@
-from codec.base_codec.descript_audio_codec import BaseCodec
+from base_codec.descript_audio_codec import BaseCodec
 
 
 class Codec(BaseCodec):

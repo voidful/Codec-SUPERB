@@ -1,4 +1,4 @@
-from codec.base_codec.encodec_hf import BaseCodec
+from base_codec.encodec_hf import BaseCodec
 
 class Codec(BaseCodec):
     def config(self):

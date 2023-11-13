@@ -1,4 +1,4 @@
-from codec.base_codec.audiodec import BaseCodec
+from base_codec.audiodec import BaseCodec
 import nlp2
 
 class Codec(BaseCodec):
