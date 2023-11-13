@@ -14,6 +14,7 @@ class BaseCodec:
         self.config()
         self.model = SpeechTokenizer.load_from_checkpoint(self.config_path, self.ckpt_path)
         self.model.eval()
+        self.model = self.model.to('cuda')
         self.sampling_rate = self.model.sample_rate
 
     def config(self):
@@ -28,26 +29,27 @@ class BaseCodec:
         self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
 
     def synth(self, data):
-        codes = self.extract_unit(data, return_unit_only=False)
-        RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
-        RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
-        # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
-        wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0))
-        wav = wav.detach().cpu().squeeze(0)
-        audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
-        save_audio(wav, audio_path, self.sampling_rate)
-        data['audio'] = audio_path
-        return data
+        with torch.no_grad():
+            codes = self.extract_unit(data, return_unit_only=False)
+            RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
+            RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
+            # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
+            wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to('cuda'))
+            wav = wav.detach().cpu().squeeze(0)
+            audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
+            save_audio(wav, audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+            return data
 
     def extract_unit(self, data, return_unit_only=True):
-        audio_path = data["audio"]["path"]
-        wav, sampling_rate = torchaudio.load(audio_path)
-        if sampling_rate != self.sampling_rate:
-            wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
-        wav = wav.unsqueeze(0)
         with torch.no_grad():
-            codes = self.model.encode(wav)
-        if return_unit_only:
-            # swap dim 0 and 1, and squeeze dim 0
-            return codes.permute(1, 0, 2).squeeze(0)
-        return codes
+            audio_path = data["audio"]["path"]
+            wav, sampling_rate = torchaudio.load(audio_path)
+            if sampling_rate != self.sampling_rate:
+                wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
+            wav = wav.unsqueeze(0)
+            codes = self.model.encode(wav.to('cuda'))
+            if return_unit_only:
+                # swap dim 0 and 1, and squeeze dim 0
+                return codes.permute(1, 0, 2).squeeze(0)
+            return codes
