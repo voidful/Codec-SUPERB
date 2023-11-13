@@ -14,7 +14,7 @@ class BaseCodec:
             raise Exception(
                 "Please install funcodec first. pip install git+https://github.com/alibaba-damo-academy/FunCodec.git")
         self.config()
-        self.model = Speech2Token(self.config_path, self.ckpt_path)
+        self.model = Speech2Token(self.config_path, self.ckpt_path, device='cuda')
 
     def config(self):
         self.setting = "funcodec_zh_en_general_16k_nq32ds640"

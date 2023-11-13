@@ -7,22 +7,17 @@ from datasets import load_dataset
 
 dataset_name = "librispeech_asr"
 
-
 def extract_unit(data, extract_unit_class):
     unit_array = extract_unit_class.extract_unit(data).cpu().numpy()
     data['unit'] = unit_array
     return data
 
-
 def apply_audio_cast(dataset, sampling_rate):
     return dataset.cast_column("audio", Audio(sampling_rate=sampling_rate))
 
 
-cleaned_dataset = load_dataset("librispeech_asr", "clean", split='train.100', streaming=True)
-d_item = next(iter(cleaned_dataset))
-print(d_item)
-sampling_rate = d_item['audio']['sampling_rate']
-cleaned_dataset = load_dataset(dataset_name, "clean", split='train.100', streaming=True)
+cleaned_dataset = load_dataset(dataset_name, "clean", split='train.100')
+sampling_rate = cleaned_dataset[0]['audio']['sampling_rate']
 datasets_dict = DatasetDict()
 for codec_name in list_codec():
     print(f"Synthesizing dataset with {codec_name}")
