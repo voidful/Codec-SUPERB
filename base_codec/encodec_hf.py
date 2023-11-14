@@ -2,10 +2,6 @@ from transformers import AutoModel, AutoProcessor
 from codec.general import save_audio
 import torch
 
-from transformers import AutoModel, AutoProcessor
-from codec.general import save_audio
-import torch
-
 class BaseCodec:
     def __init__(self):
         self.config()
