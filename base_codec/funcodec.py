@@ -32,7 +32,7 @@ class BaseCodec:
         with torch.no_grad():
             extract_data = self.extract_unit(data, return_unit_only=False)
             audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
-            save_audio(extract_data["recon_speech"][0], audio_path, self.sampling_rate)
+            save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
             data['audio'] = audio_path
             return data
 
@@ -44,7 +44,7 @@ class BaseCodec:
             if audio_signal.sample_rate != self.sampling_rate:
                 audio_signal.resample(self.sampling_rate)
 
-            code_indices, code_embeddings, recon_speech, sub_quants = self.model(audio_signal.audio_data[0])
+            code_indices, code_embeddings, recon_speech, sub_quants = self.model(audio_signal.audio_data[0].cuda())
             if return_unit_only:
                 return code_indices[0].permute(1, 0, 2).squeeze(0)
             return {"code_indices": code_indices, "code_embeddings": code_embeddings, "recon_speech": recon_speech}
