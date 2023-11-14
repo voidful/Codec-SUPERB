@@ -4,7 +4,7 @@ from audiotools import AudioSignal
 
 
 class BaseCodec:
-    def __init__(self, pretrained_model_name="descript-audio-codec"):
+    def __init__(self):
         # Reference: https://github.com/descriptinc/descript-audio-codec
         try:
             import dac
