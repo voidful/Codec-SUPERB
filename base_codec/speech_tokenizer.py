@@ -43,8 +43,8 @@ class BaseCodec:
 
     def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
-            audio_path = data["audio"]["path"]
-            wav, sampling_rate = torchaudio.load(audio_path)
+            wav = torch.tensor([data["audio"]['array']], dtype=torch.float32).to('cuda')
+            sampling_rate = data["audio"]['sampling_rate']
             if sampling_rate != self.sampling_rate:
                 wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
             wav = wav.unsqueeze(0)
