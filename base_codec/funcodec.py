@@ -38,8 +38,7 @@ class BaseCodec:
 
     def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
-            audio_path = data["audio"]["path"]
-            audio_signal = AudioSignal(audio_path)
+            audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
 
             if audio_signal.sample_rate != self.sampling_rate:
                 audio_signal.resample(self.sampling_rate)
