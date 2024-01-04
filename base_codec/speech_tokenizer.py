@@ -2,6 +2,7 @@ from codec.general import save_audio
 import torchaudio
 import torch
 import nlp2
+from pathlib import Path
 
 
 class BaseCodec:
@@ -29,15 +30,16 @@ class BaseCodec:
         self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
 
     def synth(self, data):
+        audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
         with torch.no_grad():
-            codes = self.extract_unit(data, return_unit_only=False)
-            RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
-            RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
-            # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
-            wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to('cuda'))
-            wav = wav.detach().cpu().squeeze(0)
-            audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
-            save_audio(wav, audio_path, self.sampling_rate)
+            if not Path(audio_path).exists():
+                codes = self.extract_unit(data, return_unit_only=False)
+                RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
+                RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
+                # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
+                wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to('cuda'))
+                wav = wav.detach().cpu().squeeze(0)
+                save_audio(wav, audio_path, self.sampling_rate)
             data['audio'] = audio_path
             return data
 

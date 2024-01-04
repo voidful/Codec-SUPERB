@@ -1,7 +1,7 @@
 import nlp2
 import torch
 from codec.general import save_audio
-
+from pathlib import Path
 
 class BaseCodec:
     def __init__(self):
@@ -43,12 +43,12 @@ class BaseCodec:
 
     def synth(self, data):
         codes = self.extract_unit(data, return_unit_only=True)
-
+        audio_path = f"dummy_{self.setting}/{data['id']}.wav"
         with torch.no_grad():
-            zq = self.model.rx_encoder.lookup(codes)
-            y = self.model.decoder.decode(zq)
-            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-            save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
+            if not Path(audio_path).exists():
+                zq = self.model.rx_encoder.lookup(codes)
+                y = self.model.decoder.decode(zq)
+                save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
             data['audio'] = audio_path
             return data
 

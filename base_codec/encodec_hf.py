@@ -1,5 +1,6 @@
 from transformers import AutoModel, AutoProcessor
 from codec.general import save_audio
+from pathlib import Path
 import torch
 
 class BaseCodec:
@@ -14,11 +15,12 @@ class BaseCodec:
     
     @torch.no_grad()
     def synth(self, data):
-        encoder_outputs, padding_mask = self.extract_unit(data, return_unit_only=False)
-        audio_values = \
-            self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, padding_mask)[0]
         audio_path = f"dummy_{self.pretrained_model_name}/{data['id']}.wav"
-        save_audio(audio_values[0].cpu(), audio_path, self.sampling_rate)
+        if not Path(audio_path).exists():
+            encoder_outputs, padding_mask = self.extract_unit(data, return_unit_only=False)
+            audio_values = \
+                self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, padding_mask)[0]
+            save_audio(audio_values[0].cpu(), audio_path, self.sampling_rate)
         data['audio'] = audio_path
         return data
     

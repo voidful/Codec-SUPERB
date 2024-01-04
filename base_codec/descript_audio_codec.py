@@ -1,7 +1,7 @@
 from codec.general import save_audio
 import torch
 from audiotools import AudioSignal
-
+from pathlib import Path
 
 class BaseCodec:
     def __init__(self):
@@ -24,10 +24,11 @@ class BaseCodec:
 
     def synth(self, data):
         with torch.no_grad():
-            compressed_audio = self.extract_unit(data, return_unit_only=False)
-            decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
             audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
-            save_audio(decompressed_audio, audio_path, self.sampling_rate)
+            if not Path(audio_path).exists():
+                compressed_audio = self.extract_unit(data, return_unit_only=False)
+                decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
+                save_audio(decompressed_audio, audio_path, self.sampling_rate)
             data['audio'] = audio_path
             return data
 

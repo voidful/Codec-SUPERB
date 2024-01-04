@@ -1,6 +1,6 @@
 import nlp2
 import torch
-
+from pathlib import Path
 from codec.general import save_audio
 from audiotools import AudioSignal
 
@@ -29,12 +29,13 @@ class BaseCodec:
         self.ckpt_path = f"{self.setting}/model.pth"
 
     def synth(self, data):
-        with torch.no_grad():
-            extract_data = self.extract_unit(data, return_unit_only=False)
-            audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
-            save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
-            data['audio'] = audio_path
-            return data
+        audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
+        if not Path(audio_path).exists():
+            with torch.no_grad():
+                extract_data = self.extract_unit(data, return_unit_only=False)
+                save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
+        data['audio'] = audio_path
+        return data
 
     def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
