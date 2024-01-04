@@ -5,7 +5,7 @@ from base_codec.academicodec import BaseCodec
 
 class Codec(BaseCodec):
     def config(self):
-        self.setting = "academicodec_hifi_16k_320d_large_uni"
+        self.setting = "academicodec_hifi_16k_320d"
         nlp2.download_file(
             'https://raw.githubusercontent.com/yangdongchao/AcademiCodec/master/egs/HiFi-Codec-16k-320d/config_16k_320d.json',
             'academicodec_hifi')
