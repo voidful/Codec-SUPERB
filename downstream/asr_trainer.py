@@ -6,18 +6,13 @@ from transformers import (
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments
 )
-
 from downstream.codec_bart_model import BartCodecForConditionalGeneration
-# Load dataset and tokenizer
+
 dataset = load_dataset("voidful/librispeech_encodec")
 tokenizer = AutoTokenizer.from_pretrained("voidful/bart-base-unit")
 model = BartCodecForConditionalGeneration.from_pretrained("voidful/bart-base-unit")
-
-# Split the dataset into training and validation sets
 train_dataset = dataset['trainclean100']
 valid_dataset = dataset['validationclean']
-
-# Set training parameters
 training_args = Seq2SeqTrainingArguments(
     output_dir="./training_output",
     logging_dir="./logs",
@@ -37,23 +32,20 @@ training_args = Seq2SeqTrainingArguments(
     fp16=True,
     save_total_limit=3,
 )
-
-# Define a data collator to handle tokenization
 data_collator = DataCollatorForSeq2Seq(tokenizer, model=model)
+max_sequence_len = 1023
+codec_layer = 8
 
 
-# Define training and validation functions
 def process_data_to_model_inputs(batch):
-    max_len = 1023
-    labels = tokenizer(batch["text"], padding=True, truncation=True, max_length=max_len).input_ids
-    # Replace pad_token_id (0) with -100
+    labels = tokenizer(batch["text"], padding=True, truncation=True, max_length=max_sequence_len).input_ids
     labels = [[-100 if token_id == tokenizer.pad_token_id else token_id for token_id in seq] for seq in labels]
     batch["labels"] = labels
 
     input_datas = []
     for b in range(len(batch['text'])):
         encodec_input = []
-        for i in range(8):
+        for i in range(codec_layer):
             encodec_input.append(
                 tokenizer.convert_tokens_to_ids([f"v_tok_{u + i * 1024}" for u in batch[f'encodec_{i}'][b]]))
         input_datas.append(encodec_input)
@@ -64,13 +56,12 @@ def process_data_to_model_inputs(batch):
         padded_input_data = []
         for seq in input_data:
             seq_len = len(seq)
-            padded_seq = seq + [tokenizer.pad_token_id] * (max_len - seq_len)
-            mask = [1] * seq_len + [0] * (max_len - seq_len)
+            padded_seq = seq + [tokenizer.pad_token_id] * (max_sequence_len * codec_layer - seq_len)
+            mask = [1] * seq_len + [0] * (max_sequence_len * codec_layer - seq_len)
             padded_input_data.extend(padded_seq)
         padded_input_datas.append(padded_input_data)
         attention_masks.append(mask)
     batch["input_ids"] = padded_input_datas
-    batch["feature_type_ids"] = [[1] * max_len * 8] * len(batch["input_ids"])
     batch["attention_mask"] = attention_masks
     return batch
 

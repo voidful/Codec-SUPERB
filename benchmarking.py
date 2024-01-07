@@ -5,13 +5,12 @@ from datasets import load_dataset, DownloadMode
 from collections import defaultdict
 from audiotools import AudioSignal
 
-from codec import list_codec
 from codec.general import pad_arrays_to_match
 from metrics import get_metrics
 
 
 def evaluate_dataset(dataset_name):
-    c = load_dataset(dataset_name, download_mode=DownloadMode.FORCE_REDOWNLOAD)
+    c = load_dataset(dataset_name)
 
     models = [key for key in c.keys() if key != "original"]
 
@@ -19,7 +18,6 @@ def evaluate_dataset(dataset_name):
     for model in models:
         if model != "original":
             print(f"Evaluating metrics for model: {model}")
-
             id_dict = {i['id']: i['audio']['array'] for i in c[model]}
 
             def compute_metrics(entry):
@@ -32,7 +30,6 @@ def evaluate_dataset(dataset_name):
                 return entry
 
             cal_metrics_ds = c['original'].map(compute_metrics, num_proc=1, load_from_cache_file=False)
-            # cal_metrics_ds = compute_metrics(c['original'])
 
             result_dict = defaultdict(list)
             for ds_item in cal_metrics_ds:
@@ -58,5 +55,4 @@ if __name__ == "__main__":
                         help='Name of the dataset to evaluate')
 
     args = parser.parse_args()
-
     evaluate_dataset(args.dataset)
