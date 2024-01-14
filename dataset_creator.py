@@ -38,7 +38,8 @@ def run_experiment(dataset_name):
         datasets_dict = datasets_dict.remove_columns(['audio'])
     datasets_dict.save_to_disk(f"./datasets/{dataset_name}_{args.type}")
     if args.push_to_hub:
-        datasets_dict.push_to_hub(f"AudioDecBenchmark/{dataset_name}_{args.type}")
+        push_to_hub_org = args.upload_name
+        datasets_dict.push_to_hub(f"{push_to_hub_org}/{dataset_name}_{args.type}")
 
 
 if __name__ == "__main__":
@@ -48,5 +49,6 @@ if __name__ == "__main__":
     parser.add_argument('--type', required=True, type=str, choices=['synth', 'extract_unit'],
                         help='pick from synth, or extract_unit')
     parser.add_argument('--push_to_hub', required=False, action='store_true')
+    parser.add_argument('--upload_name', required=True, default='AudioDecBenchmark')
     args = parser.parse_args()
     run_experiment(args.dataset)
