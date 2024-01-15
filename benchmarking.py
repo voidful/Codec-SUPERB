@@ -67,8 +67,7 @@ def evaluate_dataset(dataset_name, mode, batch_size):
                 aggregated_metrics[k].append(v)
 
         # Calculate and print average metrics
-        model_result = {k: (sum(v) / len(v)) if v else np.nan for k, v in aggregated_metrics.items()}
-
+        model_result = {k: np.nanmean(v) if v else np.nan for k, v in aggregated_metrics.items()}
         result_data[model] = model_result
         del id_dict  # Release memory
         gc.collect()  # Explicitly invoke garbage collection
