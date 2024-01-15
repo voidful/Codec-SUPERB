@@ -17,7 +17,7 @@ def pad_arrays_to_match(array1, array2):
     return array1_padded, array2_padded
 
 
-def save_audio(wav: torch.Tensor, path, sample_rate: int, rescale: bool = False):
+def save_audio(wav: torch.Tensor, path, sample_rate: int, rescale: bool = True):
     folder_path = os.path.dirname(path)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
