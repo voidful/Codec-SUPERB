@@ -16,6 +16,8 @@ def compute_metrics(entry, id_dict):
     sampling_rate = entry['audio']['sampling_rate']
     original_signal = AudioSignal(original_arrays, sampling_rate)
     model_signal = AudioSignal(resynth_array, sampling_rate)
+    original_signal = original_signal.normalize()
+    model_signal = model_signal.normalize()
     metrics = get_metrics(original_signal, model_signal)
     return metrics
 
