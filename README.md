@@ -27,8 +27,7 @@ the Mel Distance.
 
 ### PESQ (Higher is better)
 
-PESQ is an intrusive perceptual quality metric that assesses audio quality based on the mean opinion score of a
-human listener.
+PESQ is an intrusive perceptual quality metric for automated assessment of the speech quality. We adopt ITU-T P.862.2 (wideband).
 
 ### STOI (Higher is better)
 
