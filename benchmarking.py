@@ -1,7 +1,10 @@
 import argparse
 import json
 import gc
+import os
 import time
+from datetime import datetime
+
 import numpy as np
 from datasets import load_dataset, DownloadMode
 from collections import defaultdict
@@ -88,6 +91,14 @@ def evaluate_dataset(dataset_name, mode, batch_size, specific_models=None, max_d
 
     # Save results
     output_file_name = f"{dataset_name.replace('/', '_')}_evaluation_results.json"
+    with open(output_file_name, 'w') as out_file:
+        json.dump(result_data, out_file, indent=4)
+
+    base_filename = f"{args.dataset.replace('/', '_')}_evaluation_results"
+    timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
+    output_file_name = f"{base_filename}{timestamp}.json"
+
+    # Save results to the file
     with open(output_file_name, 'w') as out_file:
         json.dump(result_data, out_file, indent=4)
 
