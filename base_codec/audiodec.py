@@ -41,15 +41,18 @@ class BaseCodec:
         audiodec.load_receiver(self.encoder_config_path, self.decoder_config_path)
         self.model = audiodec
 
-    def synth(self, data):
+    def synth(self, data, save_audio=True):
         codes = self.extract_unit(data, return_unit_only=True)
 
         with torch.no_grad():
             zq = self.model.rx_encoder.lookup(codes)
             y = self.model.decoder.decode(zq)
-            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-            save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
-            data['audio'] = audio_path
+            if save_audio:
+                audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+                save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
+                data['audio'] = audio_path
+            else:
+                data['audio']['array'] = y[0].cpu().detach().numpy()
             return data
 
     def extract_unit(self, data, return_unit_only=True):
