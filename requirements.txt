@@ -8,3 +8,4 @@ librosa==0.10.1
 pesq==0.0.4
 descript-audio-codec
 descript-audiotools
+psutil
