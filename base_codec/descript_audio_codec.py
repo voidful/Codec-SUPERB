@@ -14,7 +14,7 @@ class BaseCodec:
         self.config()
         self.model_path = dac.utils.download(model_type=self.model_type)
         self.model = dac.DAC.load(self.model_path)
-        self.device = "cuda"
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model.to(self.device)
         self.sampling_rate = self.sampling_rate
 
@@ -22,21 +22,25 @@ class BaseCodec:
         self.model_type = "44khz"
         self.sampling_rate = 44100
 
-    def synth(self, data):
+    def synth(self, data, save_audio=True):
         with torch.no_grad():
             compressed_audio = self.extract_unit(data, return_unit_only=False)
             decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
-            audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
-            save_audio(decompressed_audio, audio_path, self.sampling_rate)
-            data['audio'] = audio_path
+            if save_audio:
+                audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
+                save_audio(decompressed_audio, audio_path, self.sampling_rate)
+                data['audio'] = audio_path
+            else:
+                data['audio']['array'] = decompressed_audio[0].cpu().numpy()
+
             return data
 
     def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
             audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
-            if audio_signal.sample_rate != self.sampling_rate:
-                audio_signal.resample(self.sampling_rate)
-            compressed_audio = self.model.compress(audio_signal)
+            # if audio_signal.sample_rate != self.sampling_rate:
+            #     audio_signal.resample(self.sampling_rate)
+            compressed_audio = self.model.compress(audio_signal, win_duration=5)
             if return_unit_only:
                 return compressed_audio.codes.squeeze(0)
             return compressed_audio
