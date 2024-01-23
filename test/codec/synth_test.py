@@ -82,7 +82,43 @@ def dac_cli_operation(filename, codec_sampling_rate=16000):
     return waveform.numpy()[-1]
 
 
-def dac_python_operation(filename, codec_sampling_rate=16000):
+def dac_16k_python_operation(filename, codec_sampling_rate=16000):
+    codec = load_codec('dac_16k')
+    waveform, sample_rate = torchaudio.load(filename)
+    resampled_waveform = waveform.numpy()[-1]
+    data_item = {'audio': {'array': resampled_waveform,
+                           'sampling_rate': sample_rate}}  # use the new sampling rate
+    audio_array = codec.synth(data_item, local_save=False)['audio']['array']
+    # save audio_array to wav in local
+    filename = filename.split('/')[-1].split('.')[0]
+    output_filename = filename + '_dac_our.wav'
+    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
+                    codec_sampling_rate,
+                    encoding='PCM_S',
+                    bits_per_sample=16)
+    waveform, sample_rate = torchaudio.load(output_filename)
+    return waveform.numpy()[-1]
+
+
+def dac_22k_python_operation(filename, codec_sampling_rate=16000):
+    codec = load_codec('dac_16k')
+    waveform, sample_rate = torchaudio.load(filename)
+    resampled_waveform = waveform.numpy()[-1]
+    data_item = {'audio': {'array': resampled_waveform,
+                           'sampling_rate': sample_rate}}  # use the new sampling rate
+    audio_array = codec.synth(data_item, local_save=False)['audio']['array']
+    # save audio_array to wav in local
+    filename = filename.split('/')[-1].split('.')[0]
+    output_filename = filename + '_dac_our.wav'
+    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
+                    codec_sampling_rate,
+                    encoding='PCM_S',
+                    bits_per_sample=16)
+    waveform, sample_rate = torchaudio.load(output_filename)
+    return waveform.numpy()[-1]
+
+
+def dac_48k_python_operation(filename, codec_sampling_rate=16000):
     codec = load_codec('dac_16k')
     waveform, sample_rate = torchaudio.load(filename)
     resampled_waveform = waveform.numpy()[-1]
@@ -107,6 +143,10 @@ if __name__ == '__main__':
         print("Checking", sample_file)
         print("encodec")
         test_codec(sample_file, encodec_cli_operation, encodec_python_operation, 24000)
-        print("dac")
-        test_codec(sample_file, dac_cli_operation, dac_python_operation, 16000)
+        print("dac 16k")
+        test_codec(sample_file, dac_cli_operation, dac_16k_python_operation, 16000)
+        print("dac 22k")
+        test_codec(sample_file, dac_cli_operation, dac_22k_python_operation, 22000)
+        print("dac 48k")
+        test_codec(sample_file, dac_cli_operation, dac_48k_python_operation, 48000)
         print("=====================================")
