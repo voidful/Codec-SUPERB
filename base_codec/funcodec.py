@@ -28,11 +28,11 @@ class BaseCodec:
             self.setting)
         self.ckpt_path = f"{self.setting}/model.pth"
 
-    def synth(self, data, save_audio=True):
+    def synth(self, data, save_audio_flag=True):
         with torch.no_grad():
             extract_data = self.extract_unit(data, return_unit_only=False)
             audio_array = extract_data["recon_speech"][0].cpu().numpy()
-            if save_audio:
+            if save_audio_flag:
                 audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
                 save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
                 data['audio'] = audio_path

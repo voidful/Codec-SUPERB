@@ -52,6 +52,8 @@ class BaseCodec:
                 wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
             wav = wav.unsqueeze(0)
             codes = self.model.encode(wav.to('cuda'))
+            import pdb
+            pdb.set_trace()
             if return_unit_only:
                 # swap dim 0 and 1, and squeeze dim 0
                 return codes.permute(1, 0, 2).squeeze(0)
