@@ -40,6 +40,7 @@ class BaseCodec:
         sr = torch.tensor(sr).unsqueeze(0)
         wav = self.convert_audio(wav, sr, self.model.sample_rate, self.model.channels)
         wav = wav.unsqueeze(0)
+        wav = wav.to(torch.float32)
         # Extract discrete codes from EnCodec
         with torch.no_grad():
             encoded_frames = self.model.encode(wav)
