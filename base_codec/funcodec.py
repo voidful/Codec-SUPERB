@@ -1,5 +1,6 @@
 import nlp2
 import torch
+import os
 
 from codec.general import save_audio
 from audiotools import AudioSignal
@@ -14,6 +15,7 @@ class BaseCodec:
             raise Exception(
                 "Please install funcodec first. pip install git+https://github.com/alibaba-damo-academy/FunCodec.git")
         self.config()
+        os.makedirs("funcodec", exist_ok=True)
         self.model = Speech2Token(self.config_path, self.ckpt_path, device='cuda')
 
     def config(self):
