@@ -15,11 +15,11 @@ class BaseCodec:
         self.pretrained_model_name = "facebook/encodec_24khz"
 
     @torch.no_grad()
-    def synth(self, data, save_audio_flag=True):
+    def synth(self, data, local_save=True):
         encoder_outputs, padding_mask = self.extract_unit(data, return_unit_only=False)
         audio_values = \
             self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, padding_mask)[0]
-        if save_audio_flag:
+        if local_save:
             audio_path = f"dummy_{self.pretrained_model_name}/{data['id']}.wav"
             save_audio(audio_values[0].cpu(), audio_path, self.sampling_rate)
             data['audio'] = audio_path

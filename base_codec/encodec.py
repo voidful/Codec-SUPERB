@@ -18,13 +18,13 @@ class BaseCodec:
         self.model.set_target_bandwidth(6.0)
 
     @torch.no_grad()
-    def synth(self, data, save_audio_flag=True):
+    def synth(self, data, local_save=True):
         encoded_frames = self.extract_unit(data, return_unit_only=False)
         audio_values = \
             self.model.decode(encoded_frames)[0]
         # trim the audio to the same length as the input
         audio_values = audio_values[:, :data['audio']['array'].shape[0]]
-        if save_audio_flag:
+        if local_save:
             audio_path = f"dummy_{self.pretrained_model_name}/{data['id']}.wav"
             save_audio(audio_values[0].cpu(), audio_path, self.sampling_rate)
             data['audio'] = audio_path

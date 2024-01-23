@@ -28,7 +28,7 @@ class BaseCodec:
             "speechtokenizer_hubert_avg")
         self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
 
-    def synth(self, data, save_audio=True):
+    def synth(self, data, local_save=True):
         with torch.no_grad():
             codes = self.extract_unit(data, return_unit_only=False)
             RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
@@ -36,7 +36,7 @@ class BaseCodec:
             # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
             wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to('cuda'))
             wav = wav.detach().cpu().squeeze(0)
-            if save_audio:
+            if local_save:
                 audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
                 save_audio(wav, audio_path, self.sampling_rate)
                 data['audio'] = audio_path

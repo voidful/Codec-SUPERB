@@ -9,7 +9,7 @@ class BaseCodec:
         try:
             import dac
         except:
-            raise Exception("Please install descript-audio-codec first. pip install descript-audio-codec")
+            raise Exception("Please install descript-audio-codec first. pip install git+https://github.com/voidful/descript-audio-codec.git")
 
         self.config()
         self.model_path = dac.utils.download(model_type=self.model_type)
@@ -22,11 +22,11 @@ class BaseCodec:
         self.model_type = "44khz"
         self.sampling_rate = 44100
 
-    def synth(self, data, save_audio_flag=True):
+    def synth(self, data, local_save=True):
         with torch.no_grad():
             compressed_audio = self.extract_unit(data, return_unit_only=False)
             decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
-            if save_audio_flag:
+            if local_save:
                 audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
                 save_audio(decompressed_audio, audio_path, self.sampling_rate)
                 data['audio'] = audio_path
@@ -38,8 +38,6 @@ class BaseCodec:
     def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
             audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
-            # if audio_signal.sample_rate != self.sampling_rate:
-            #     audio_signal.resample(self.sampling_rate)
             compressed_audio = self.model.compress(audio_signal, win_duration=5)
             if return_unit_only:
                 return compressed_audio.codes.squeeze(0)
