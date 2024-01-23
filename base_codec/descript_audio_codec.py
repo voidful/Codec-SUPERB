@@ -22,11 +22,11 @@ class BaseCodec:
         self.model_type = "44khz"
         self.sampling_rate = 44100
 
-    def synth(self, data, save_audio=True):
+    def synth(self, data, save_audio_flag=True):
         with torch.no_grad():
             compressed_audio = self.extract_unit(data, return_unit_only=False)
             decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
-            if save_audio:
+            if save_audio_flag:
                 audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
                 save_audio(decompressed_audio, audio_path, self.sampling_rate)
                 data['audio'] = audio_path
