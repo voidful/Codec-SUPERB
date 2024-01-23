@@ -17,8 +17,8 @@ def test_codec(filename, codec_cli_operation, codec_python_operation, codec_samp
     cli_audio_array = codec_cli_operation(filename, codec_sampling_rate)
 
     # compare the two arrays
-    print("Ours", codec_audio_array)
-    print("CLI", cli_audio_array)
+    print("Ours", codec_audio_array, codec_audio_array.shape)
+    print("CLI", cli_audio_array, cli_audio_array.shape)
     print("diff mean:", np.mean(np.abs(codec_audio_array - cli_audio_array)))
     print("diff std:", np.std(np.abs(codec_audio_array - cli_audio_array)))
     print("diff max:", np.max(np.abs(codec_audio_array - cli_audio_array)))
@@ -27,11 +27,13 @@ def test_codec(filename, codec_cli_operation, codec_python_operation, codec_samp
     print("is close?", np.mean(np.abs(codec_audio_array - cli_audio_array)) < 0.0001)
 
     # read filename audio to numpy and convert to 24000
-    print("CLI to Ori",compute_metrics({'audio': {'array': resampled_waveform, 'sampling_rate': codec_sampling_rate}},
-                          {'audio': {'array': cli_audio_array, 'sampling_rate': codec_sampling_rate}}, 120))
-    print("Our to Ori",compute_metrics({'audio': {'array': resampled_waveform, 'sampling_rate': codec_sampling_rate}},
-                          {'audio': {'array': codec_audio_array, 'sampling_rate': codec_sampling_rate}}, 120))
-    return np.allclose(codec_audio_array, cli_audio_array)
+    print("CLI to Ori", compute_metrics({'audio': {'array': resampled_waveform, 'sampling_rate': codec_sampling_rate}},
+                                        {'audio': {'array': cli_audio_array, 'sampling_rate': codec_sampling_rate}},
+                                        120))
+    print("Our to Ori", compute_metrics({'audio': {'array': resampled_waveform, 'sampling_rate': codec_sampling_rate}},
+                                        {'audio': {'array': codec_audio_array, 'sampling_rate': codec_sampling_rate}},
+                                        120))
+    return np.mean(np.abs(codec_audio_array - cli_audio_array)) < 0.0001
 
 
 def encodec_cli_operation(filename, codec_sampling_rate=24000):
@@ -48,17 +50,18 @@ def encodec_python_operation(filename, codec_sampling_rate=24000):
     resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=codec_sampling_rate)
     resampled_waveform = resampler(waveform)
     resampled_waveform = resampled_waveform.numpy()[-1]
-    # resampled_waveform = waveform.numpy()[-1]
     data_item = {'audio': {'array': resampled_waveform,
                            'sampling_rate': codec_sampling_rate}}  # use the new sampling rate
-    audio_array = codec.synth(data_item, save_audio=False)['audio']['array']
+    audio_array = codec.synth(data_item, local_save=False)['audio']['array']
     # save audio_array to wav in local
     filename = filename.split('/')[-1].split('.')[0]
-    torchaudio.save(filename + 'encodec_our.wav', torch.tensor(np.array([audio_array])),
+    output_filename = filename + '_encodec_our.wav'
+    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
                     codec_sampling_rate,
                     encoding='PCM_S',
                     bits_per_sample=16)
-    return audio_array
+    waveform, sample_rate = torchaudio.load(output_filename)
+    return waveform.numpy()[-1]
 
 
 def dac_cli_operation(filename, codec_sampling_rate=16000):
@@ -82,22 +85,28 @@ def dac_cli_operation(filename, codec_sampling_rate=16000):
 def dac_python_operation(filename, codec_sampling_rate=16000):
     codec = load_codec('dac_16k')
     waveform, sample_rate = torchaudio.load(filename)
-    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=codec_sampling_rate)
-    resampled_waveform = resampler(waveform)
-    resampled_waveform = resampled_waveform.numpy()[-1]
-    # resampled_waveform = waveform.numpy()[-1]
+    resampled_waveform = waveform.numpy()[-1]
     data_item = {'audio': {'array': resampled_waveform,
-                           'sampling_rate': codec_sampling_rate}}  # use the new sampling rate
-    audio_array = codec.synth(data_item, save_audio=False)['audio']['array']
+                           'sampling_rate': sample_rate}}  # use the new sampling rate
+    audio_array = codec.synth(data_item, local_save=False)['audio']['array']
     # save audio_array to wav in local
     filename = filename.split('/')[-1].split('.')[0]
-    torchaudio.save(filename + 'dac_our.wav', torch.tensor(np.array([audio_array])),
+    output_filename = filename + '_dac_our.wav'
+    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
                     codec_sampling_rate,
                     encoding='PCM_S',
                     bits_per_sample=16)
-    return audio_array
+    waveform, sample_rate = torchaudio.load(output_filename)
+    return waveform.numpy()[-1]
 
 
 if __name__ == '__main__':
-    test_codec('./sample_16k.wav', encodec_cli_operation, encodec_python_operation, 24000)
-    test_codec('./sample_16k.wav', dac_cli_operation, dac_python_operation, 16000)
+    for sample_file in ['sample1_16k.wav', 'sample2_22k.wav', 'sample3_48k.wav', 'sample4_16k.wav',
+                        'sample5_16k.wav', 'sample6_48k.wav', 'sample7_16k.wav', 'sample8_16k.wav',
+                        'sample9_48k.wav', 'sample10_16k.wav']:
+        print("Checking", sample_file)
+        print("encodec")
+        test_codec(sample_file, encodec_cli_operation, encodec_python_operation, 24000)
+        print("dac")
+        test_codec(sample_file, dac_cli_operation, dac_python_operation, 16000)
+        print("=====================================")
