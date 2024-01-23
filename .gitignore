@@ -1,5 +1,5 @@
 *.wav
-/test/**/
+/test/codec/**/
 !/test/codec/sample1_16k.wav
 !/test/codec/sample2_22k.wav
 !/test/codec/sample3_48k.wav
