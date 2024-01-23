@@ -16,6 +16,8 @@ class BaseCodec:
     def config(self):
         self.model = self.EncodecModel.encodec_model_24khz()
         self.model.set_target_bandwidth(6.0)
+        self.setting = "encodec_24khz_6.0"
+        self.sampling_rate = 24_000
 
     @torch.no_grad()
     def synth(self, data, local_save=True):
@@ -25,8 +27,8 @@ class BaseCodec:
         # trim the audio to the same length as the input
         audio_values = audio_values[:, :data['audio']['array'].shape[0]]
         if local_save:
-            audio_path = f"dummy_{self.pretrained_model_name}/{data['id']}.wav"
-            save_audio(audio_values[0].cpu(), audio_path, self.sampling_rate)
+            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+            save_audio(audio_values.cpu(), audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
             data['audio']['array'] = audio_values[0].cpu().numpy()

@@ -1,3 +1,5 @@
+import numpy
+
 from codec.general import save_audio
 import torchaudio
 import torch
@@ -46,14 +48,12 @@ class BaseCodec:
 
     def extract_unit(self, data, return_unit_only=True):
         with torch.no_grad():
-            wav = torch.tensor([data["audio"]['array']], dtype=torch.float32).to('cuda')
+            wav = torch.tensor(numpy.array([data["audio"]['array']]), dtype=torch.float32).to('cuda')
             sampling_rate = data["audio"]['sampling_rate']
             if sampling_rate != self.sampling_rate:
                 wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
             wav = wav.unsqueeze(0)
             codes = self.model.encode(wav.to('cuda'))
-            import pdb
-            pdb.set_trace()
             if return_unit_only:
                 # swap dim 0 and 1, and squeeze dim 0
                 return codes.permute(1, 0, 2).squeeze(0)

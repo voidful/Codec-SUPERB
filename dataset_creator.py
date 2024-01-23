@@ -11,6 +11,10 @@ def run_experiment(dataset_name):
     d_item = next(iter(cleaned_dataset))
     sampling_rate = d_item['audio']['sampling_rate']
     cleaned_dataset = load_dataset(dataset_name)
+    print("before filter duration", cleaned_dataset)
+    cleaned_dataset = cleaned_dataset.filter(
+        lambda x: len(x['audio']['array']) / x['audio']['sampling_rate'] <= args.max_duration)
+    print("after filter duration", cleaned_dataset)
     cleaned_dataset = ds_module.general.apply_audio_cast(cleaned_dataset, sampling_rate)
     if args.type == 'synth':
         datasets_dict = DatasetDict({'original': cleaned_dataset})
@@ -41,12 +45,15 @@ def run_experiment(dataset_name):
     if args.push_to_hub:
         push_to_hub_org = args.upload_name
         datasets_dict.push_to_hub(f"{push_to_hub_org}/{dataset_name}_{args.type}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run audio encoding-decoding experiments.')
     parser.add_argument('--dataset', type=str, required=True,
                         help='Name of the dataset to process in huggingface/datasets')
     parser.add_argument('--type', required=True, type=str, choices=['synth', 'extract_unit'],
                         help='pick from synth, or extract_unit')
+    parser.add_argument('--max_duration', required=False, type=int, default=120)
     parser.add_argument('--push_to_hub', required=False, action='store_true')
     parser.add_argument('--upload_name', required=False, default='Codec-SUPERB')
     args = parser.parse_args()
