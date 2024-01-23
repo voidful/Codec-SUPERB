@@ -1,6 +1,7 @@
 from base_codec.audiodec import BaseCodec
 import nlp2
 
+
 class Codec(BaseCodec):
     def config(self):
         self.setting = "audiodec_24k_320d"

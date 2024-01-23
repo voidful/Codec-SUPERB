@@ -26,14 +26,14 @@ def run_experiment(dataset_name):
         except:
             pass
         codec = load_codec(codec_name)
-        cleaned_dataset = ds_module.general.apply_audio_cast(cleaned_dataset, codec.sampling_rate)
+        synthesized_dataset = ds_module.general.apply_audio_cast(cleaned_dataset, codec.sampling_rate)
         if args.type == 'extract_unit':
-            cleaned_dataset = cleaned_dataset.map(extract_unit, fn_kwargs={'extract_unit_class': codec})
+            synthesized_dataset = synthesized_dataset.map(extract_unit, fn_kwargs={'extract_unit_class': codec})
         else:
-            cleaned_dataset = cleaned_dataset.map(codec.synth)
-            cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(sampling_rate=sampling_rate))
-        cleaned_dataset.save_to_disk(f"./datasets/{dataset_name}_{codec_name}_{args.type}/")
-        datasets_dict[f'{codec_name}'] = cleaned_dataset
+            synthesized_dataset = synthesized_dataset.map(codec.synth)
+            synthesized_dataset = synthesized_dataset.cast_column("audio", Audio(sampling_rate=sampling_rate))
+        synthesized_dataset.save_to_disk(f"./datasets/{dataset_name}_{codec_name}_{args.type}/")
+        datasets_dict[f'{codec_name}'] = synthesized_dataset
 
     if args.type == 'extract_unit':
         datasets_dict = datasets_dict.remove_columns(['audio'])
@@ -48,6 +48,6 @@ if __name__ == "__main__":
     parser.add_argument('--type', required=True, type=str, choices=['synth', 'extract_unit'],
                         help='pick from synth, or extract_unit')
     parser.add_argument('--push_to_hub', required=False, action='store_true')
-    parser.add_argument('--upload_name', required=False, default='AudioDecBenchmark')
+    parser.add_argument('--upload_name', required=False, default='Codec-SUPERB')
     args = parser.parse_args()
     run_experiment(args.dataset)

@@ -1,5 +1,7 @@
-from base_codec.encodec_hf import BaseCodec
+from base_codec.encodec import BaseCodec
 
 class Codec(BaseCodec):
     def config(self):
-        self.pretrained_model_name = "facebook/encodec_24khz"
+        self.model = self.EncodecModel.encodec_model_24khz()
+        self.model.set_target_bandwidth(6.0)
+        self.sampling_rate = 24_000

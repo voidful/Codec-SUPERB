@@ -1,5 +1,6 @@
 import nlp2
 import torch
+import os
 
 from codec.general import save_audio
 from audiotools import AudioSignal
@@ -13,6 +14,7 @@ class BaseCodec:
         except:
             raise Exception(
                 "Please install funcodec first. pip install git+https://github.com/alibaba-damo-academy/FunCodec.git")
+        os.makedirs("funcodec", exist_ok=True)
         self.config()
         self.model = Speech2Token(self.config_path, self.ckpt_path, device='cuda')
 
@@ -21,19 +23,23 @@ class BaseCodec:
         self.sampling_rate = 16000
         nlp2.download_file(
             'https://huggingface.co/alibaba-damo/audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch/raw/main/config.yaml',
-            self.setting)
-        self.config_path = f"{self.setting}/config.yaml"
+            f"funcodec/{self.setting}")
+        self.config_path = f"funcodec/{self.setting}/config.yaml"
         nlp2.download_file(
             'https://huggingface.co/alibaba-damo/audio_codec-encodec-zh_en-general-16k-nq32ds640-pytorch/resolve/main/model.pth',
-            self.setting)
-        self.ckpt_path = f"{self.setting}/model.pth"
+            f"funcodec/{self.setting}")
+        self.ckpt_path = f"funcodec/{self.setting}/model.pth"
 
-    def synth(self, data):
+    def synth(self, data, local_save=True):
         with torch.no_grad():
             extract_data = self.extract_unit(data, return_unit_only=False)
-            audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
-            save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
-            data['audio'] = audio_path
+            audio_array = extract_data["recon_speech"][0].cpu().numpy()
+            if local_save:
+                audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
+                save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
+                data['audio'] = audio_path
+            else:
+                data['audio']['array'] = extract_data["recon_speech"][0].cpu().numpy()
             return data
 
     def extract_unit(self, data, return_unit_only=True):
