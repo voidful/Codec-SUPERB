@@ -1,3 +1,12 @@
 *.wav
 /test/**/
-!/test/sample_16k.wav
+!/test/sample1_16k.wav
+!/test/sample2_22k.wav
+!/test/sample3_48k.wav
+!/test/sample4_16k.wav
+!/test/sample5_16k.wav
+!/test/sample6_48k.wav
+!/test/sample7_16k.wav
+!/test/sample8_16k.wav
+!/test/sample9_48k.wav
+!/test/sample10_16k.wav
