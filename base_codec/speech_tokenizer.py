@@ -28,7 +28,7 @@ class BaseCodec:
             "speechtokenizer_hubert_avg")
         self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
 
-    def synth(self, data):
+    def synth(self, data, local_save=True):
         with torch.no_grad():
             codes = self.extract_unit(data, return_unit_only=False)
             RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
@@ -36,9 +36,12 @@ class BaseCodec:
             # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
             wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to('cuda'))
             wav = wav.detach().cpu().squeeze(0)
-            audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
-            save_audio(wav, audio_path, self.sampling_rate)
-            data['audio'] = audio_path
+            if local_save:
+                audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
+                save_audio(wav, audio_path, self.sampling_rate)
+                data['audio'] = audio_path
+            else:
+                data['audio']['array'] = wav.numpy()
             return data
 
     def extract_unit(self, data, return_unit_only=True):
@@ -49,6 +52,8 @@ class BaseCodec:
                 wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
             wav = wav.unsqueeze(0)
             codes = self.model.encode(wav.to('cuda'))
+            import pdb
+            pdb.set_trace()
             if return_unit_only:
                 # swap dim 0 and 1, and squeeze dim 0
                 return codes.permute(1, 0, 2).squeeze(0)

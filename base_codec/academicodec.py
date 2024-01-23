@@ -41,13 +41,16 @@ class BaseCodec:
             config = json.load(f)
             self.sampling_rate = config['sampling_rate']
 
-    def synth(self, data):
+    def synth(self, data, local_save=True):
         with torch.no_grad():
             acoustic_token = self.extract_unit(data, return_unit_only=False)
             audio_values = self.model(acoustic_token)
-            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-            save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
-            data['audio'] = audio_path
+            if local_save:
+                audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+                save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
+                data['audio'] = audio_path
+            else:
+                data['audio']['array'] = audio_values.cpu().detach()[0].numpy()
             return data
 
     def extract_unit(self, data, return_unit_only=True):
