@@ -1,5 +1,5 @@
 import argparse
-from datasets import DatasetDict, Audio, load_from_disk, concatenate_datasets, Features, Dataset
+from datasets import DatasetDict, Audio, load_from_disk, concatenate_datasets, Features, Dataset, Value, Sequence
 from codec import load_codec, list_codec
 from datasets import load_dataset
 import dataset as ds_module
@@ -11,32 +11,38 @@ def load_dataset_streaming(dataset_name):
 
 def add_codec_split(cleaned_dataset, codec_name):
     codec = load_codec(codec_name)
+    original_sampling_rate = cleaned_dataset.features['audio'].sampling_rate
     cleaned_dataset = ds_module.general.apply_audio_cast(cleaned_dataset, codec.sampling_rate)
     features = cleaned_dataset.features.copy()
+    features['unit'] = Sequence(feature=Sequence(feature=Value(dtype='int64', id=None)))
     cleaned_dataset = cleaned_dataset.map(codec.synth, features=features)
-    cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(sampling_rate=codec.sampling_rate))
-    return cleaned_dataset
+    return cleaned_dataset, original_sampling_rate
 
 
-def run_experiment(dataset_name, type, add_codec=None, push_to_hub=False, upload_name='AudioDecBenchmark'):
+def run_experiment(dataset_name, update_codec, extract_unit_only, push_to_hub):
     cleaned_dataset = load_dataset_streaming(dataset_name)
-    cleaned_dataset = add_codec_split(cleaned_dataset, add_codec)
+    cleaned_dataset, original_sampling_rate = add_codec_split(cleaned_dataset, update_codec)
     cleaned_dataset = Dataset.from_generator(cleaned_dataset.__iter__)
-    print(cleaned_dataset)
     if push_to_hub:
-        cleaned_dataset.push_to_hub(
-            f"{upload_name}/{dataset_name}_{type}_{add_codec}")  # not able to update existing dataset with streaming, so we create a new one
+        if "_synth" in dataset_name:
+            dataset_name = dataset_name.replace("_synth", "")
+        datasets_dict_unit_only = cleaned_dataset.remove_columns(['audio'])
+        datasets_dict_unit_only.push_to_hub(
+            f"{dataset_name}_unit", split=update_codec)
+        if not extract_unit_only:
+            cleaned_dataset = cleaned_dataset.remove_columns(['unit'])
+            cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(sampling_rate=original_sampling_rate))
+            cleaned_dataset.push_to_hub(
+                f"{dataset_name}_synth", split=update_codec)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run audio encoding-decoding experiments.')
     parser.add_argument('--dataset', type=str, required=True,
                         help='Name of the dataset to process in huggingface/datasets')
-    parser.add_argument('--type', required=True, type=str, choices=['synth', 'extract_unit'],
-                        help='pick from synth, or extract_unit')
-    parser.add_argument('--add_codec', type=str, choices=list_codec(),
+    parser.add_argument('--update_codec', type=str, choices=list_codec(),
                         help='Name of the codec to add to the dataset')
+    parser.add_argument('--extract_unit_only', required=False, action='store_true')
     parser.add_argument('--push_to_hub', required=False, action='store_true')
-    parser.add_argument('--upload_name', required=True, default='AudioDecBenchmark')
     args = parser.parse_args()
-    run_experiment(args.dataset, args.type, args.add_codec, args.push_to_hub, args.upload_name)
+    run_experiment(args.dataset, args.update_codec, args.extract_unit_only, args.push_to_hub)

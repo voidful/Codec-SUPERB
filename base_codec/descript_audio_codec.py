@@ -1,4 +1,4 @@
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 import torch
 from audiotools import AudioSignal
 
@@ -9,7 +9,8 @@ class BaseCodec:
         try:
             import dac
         except:
-            raise Exception("Please install descript-audio-codec first. pip install git+https://github.com/voidful/descript-audio-codec.git")
+            raise Exception(
+                "Please install descript-audio-codec first. pip install git+https://github.com/voidful/descript-audio-codec.git")
 
         self.config()
         self.model_path = dac.utils.download(model_type=self.model_type)
@@ -22,23 +23,26 @@ class BaseCodec:
         self.model_type = "44khz"
         self.sampling_rate = 44100
 
+    @torch.no_grad()
     def synth(self, data, local_save=True):
-        with torch.no_grad():
-            compressed_audio = self.extract_unit(data, return_unit_only=False)
-            decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
-            if local_save:
-                audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
-                save_audio(decompressed_audio, audio_path, self.sampling_rate)
-                data['audio'] = audio_path
-            else:
-                data['audio']['array'] = decompressed_audio[0].cpu().numpy()
+        extracted_unit = self.extract_unit(data)
+        compressed_audio, unit_only = extracted_unit.stuff_for_synth
+        data['unit'] = extracted_unit.unit
+        decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
+        if local_save:
+            audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
+            save_audio(decompressed_audio, audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+        else:
+            data['audio']['array'] = decompressed_audio.cpu().numpy()
+        return data
 
-            return data
-
-    def extract_unit(self, data, return_unit_only=True):
-        with torch.no_grad():
-            audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
-            compressed_audio = self.model.compress(audio_signal, win_duration=5)
-            if return_unit_only:
-                return compressed_audio.codes.squeeze(0)
-            return compressed_audio
+    @torch.no_grad()
+    def extract_unit(self, data):
+        audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
+        compressed_audio = self.model.compress(audio_signal, win_duration=5)
+        codes = compressed_audio.codes.squeeze(0)
+        return ExtractedUnit(
+            unit=codes,
+            stuff_for_synth=(compressed_audio, codes)
+        )

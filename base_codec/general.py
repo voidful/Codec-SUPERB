@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 
 import numpy as np
 import torchaudio
@@ -15,6 +16,18 @@ def pad_arrays_to_match(array1, array2):
     array1_padded = np.pad(array1, padding1, mode='constant')
     array2_padded = np.pad(array2, padding2, mode='constant')
     return array1_padded, array2_padded
+
+
+@dataclass
+class ExtractedUnit:
+    unit: torch.Tensor
+    stuff_for_synth: object
+
+    def to_dict(self):
+        return {
+            'unit': self.unit,
+            'stuff_for_synth': self.stuff_for_synth
+        }
 
 
 def save_audio(wav: torch.Tensor, path, sample_rate: int, rescale: bool = False):

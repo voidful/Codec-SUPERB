@@ -1,11 +1,11 @@
 import nlp2
 import torch
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 
 
 class BaseCodec:
     def __init__(self):
-        self.device = "cuda"
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.config()
 
     def config(self):
@@ -41,33 +41,35 @@ class BaseCodec:
         audiodec.load_receiver(self.encoder_config_path, self.decoder_config_path)
         self.model = audiodec
 
+    @torch.no_grad()
     def synth(self, data, local_save=True):
-        codes = self.extract_unit(data, return_unit_only=True)
+        extracted_unit = self.extract_unit(data)
+        _, codes = extracted_unit.stuff_for_synth
+        data['unit'] = extracted_unit.unit
+        zq = self.model.rx_encoder.lookup(codes)
+        y = self.model.decoder.decode(zq)
+        if local_save:
+            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+            save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+        else:
+            data['audio']['array'] = y[0].cpu().detach().numpy()
+        return data
 
-        with torch.no_grad():
-            zq = self.model.rx_encoder.lookup(codes)
-            y = self.model.decoder.decode(zq)
-            if local_save:
-                audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-                save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
-                data['audio'] = audio_path
-            else:
-                data['audio']['array'] = y[0].cpu().detach().numpy()
-            return data
-
-    def extract_unit(self, data, return_unit_only=True):
-        with torch.no_grad():
-            x = torch.from_numpy(data['audio']['array']).unsqueeze(0).unsqueeze(0).to(torch.float32).to(self.device)
-            self.model.tx_encoder.reset_buffer()
-            z = self.model.tx_encoder.encode(x)
-            zq, codes = self.model.tx_encoder.quantizer.codebook.forward_index(z.transpose(2, 1), flatten_idx=False)
-            if len(codes.shape) == 2:
-                codes = codes.unsqueeze(1)
-            codes = codes.transpose(0, 1).squeeze()
-            codebook_size = self.model.rx_encoder.quantizer.codebook.codebook_size
-            for y, code in enumerate(codes):
-                codes[y] += int(y * codebook_size)
-            codes = codes.squeeze(0)
-            if return_unit_only:
-                return codes
-            return zq, codes
+    @torch.no_grad()
+    def extract_unit(self, data):
+        x = torch.from_numpy(data['audio']['array']).unsqueeze(0).unsqueeze(0).to(torch.float32).to(self.device)
+        self.model.tx_encoder.reset_buffer()
+        z = self.model.tx_encoder.encode(x)
+        zq, codes = self.model.tx_encoder.quantizer.codebook.forward_index(z.transpose(2, 1), flatten_idx=False)
+        if len(codes.shape) == 2:
+            codes = codes.unsqueeze(1)
+        codes = codes.transpose(0, 1).squeeze()
+        codebook_size = self.model.rx_encoder.quantizer.codebook.codebook_size
+        for y, code in enumerate(codes):
+            codes[y] += int(y * codebook_size)
+        codes = codes.squeeze(0)
+        return ExtractedUnit(
+            unit=codes,
+            stuff_for_synth=(zq, codes)
+        )

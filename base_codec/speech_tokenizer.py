@@ -1,6 +1,6 @@
 import numpy
 
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 import torchaudio
 import torch
 import nlp2
@@ -16,7 +16,8 @@ class BaseCodec:
         self.config()
         self.model = SpeechTokenizer.load_from_checkpoint(self.config_path, self.ckpt_path)
         self.model.eval()
-        self.model = self.model.to('cuda')
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model = self.model.to(self.device)
         self.sampling_rate = self.model.sample_rate
 
     def config(self):
@@ -30,31 +31,33 @@ class BaseCodec:
             "speechtokenizer_hubert_avg")
         self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
 
+    @torch.no_grad()
     def synth(self, data, local_save=True):
-        with torch.no_grad():
-            codes = self.extract_unit(data, return_unit_only=False)
-            RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
-            RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
-            # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
-            wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to('cuda'))
-            wav = wav.detach().cpu().squeeze(0)
-            if local_save:
-                audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
-                save_audio(wav, audio_path, self.sampling_rate)
-                data['audio'] = audio_path
-            else:
-                data['audio']['array'] = wav.numpy()
-            return data
+        extracted_unit = self.extract_unit(data)
+        data['unit'] = extracted_unit.unit
+        codes = extracted_unit.stuff_for_synth
+        RVQ_1 = codes[:1, :, :]  # Contain content info, can be considered as semantic tokens
+        RVQ_supplement = codes[1:, :, :]  # Contain timbre info, complete info lost by the first quantizer
+        # Concatenating semantic tokens (RVQ_1) and supplementary timbre tokens and then decoding
+        wav = self.model.decode(torch.cat([RVQ_1, RVQ_supplement], axis=0).to(self.device))
+        wav = wav.detach().cpu().squeeze(0)
+        if local_save:
+            audio_path = f"dummy-SpeechTokenizer/{data['id']}.wav"
+            save_audio(wav, audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+        else:
+            data['audio']['array'] = wav.numpy()
+        return data
 
-    def extract_unit(self, data, return_unit_only=True):
-        with torch.no_grad():
-            wav = torch.tensor(numpy.array([data["audio"]['array']]), dtype=torch.float32).to('cuda')
-            sampling_rate = data["audio"]['sampling_rate']
-            if sampling_rate != self.sampling_rate:
-                wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
-            wav = wav.unsqueeze(0)
-            codes = self.model.encode(wav.to('cuda'))
-            if return_unit_only:
-                # swap dim 0 and 1, and squeeze dim 0
-                return codes.permute(1, 0, 2).squeeze(0)
-            return codes
+    @torch.no_grad()
+    def extract_unit(self, data):
+        wav = torch.tensor(numpy.array([data["audio"]['array']]), dtype=torch.float32).to(self.device)
+        sampling_rate = data["audio"]['sampling_rate']
+        if sampling_rate != self.sampling_rate:
+            wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
+        wav = wav.unsqueeze(0)
+        codes = self.model.encode(wav.to(self.device))
+        return ExtractedUnit(
+            unit=codes.permute(1, 0, 2).squeeze(0),
+            stuff_for_synth=codes
+        )
