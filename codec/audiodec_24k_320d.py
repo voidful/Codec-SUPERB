@@ -31,7 +31,7 @@ class Codec(BaseCodec):
         )
         self.decoder_config_path = "audiodec_vocoder_24k_320d/checkpoint-500000steps.pkl"
         self.sampling_rate = 24000
-        audiodec = AudioDecModel(tx_device=self.device, rx_device=self.device)
-        audiodec.load_transmitter(self.encoder_config_path)
-        audiodec.load_receiver(self.encoder_config_path, self.decoder_config_path)
-        self.model = audiodec
+        audiodec_model = AudioDecModel(tx_device=self.device, rx_device=self.device)
+        audiodec_model.load_transmitter(self.encoder_config_path)
+        audiodec_model.load_receiver(self.encoder_config_path, self.decoder_config_path)
+        self.model = audiodec_model
