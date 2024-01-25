@@ -7,5 +7,5 @@ def apply_audio_cast(dataset, sampling_rate):
 
 def extract_unit(data, extract_unit_class):
     unit_array = extract_unit_class.extract_unit(data).cpu().numpy()
-    data['unit'] = unit_array
+    data.unit = unit_array
     return data

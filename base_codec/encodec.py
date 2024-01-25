@@ -1,5 +1,5 @@
 import torch
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 
 
 class BaseCodec:
@@ -21,7 +21,9 @@ class BaseCodec:
 
     @torch.no_grad()
     def synth(self, data, local_save=True):
-        encoded_frames = self.extract_unit(data, return_unit_only=False)
+        extracted_unit = self.extract_unit(data)
+        data['unit'] = extracted_unit.unit
+        encoded_frames = extracted_unit.stuff_for_synth
         audio_values = \
             self.model.decode(encoded_frames)[0]
         # trim the audio to the same length as the input
@@ -31,11 +33,11 @@ class BaseCodec:
             save_audio(audio_values.cpu(), audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
-            data['audio']['array'] = audio_values[0].cpu().numpy()
+            data['audio']['array'] = audio_values.cpu().numpy()
         return data
 
     @torch.no_grad()
-    def extract_unit(self, data, return_unit_only=True):
+    def extract_unit(self, data):
         wav, sr = data["audio"]["array"], data["audio"]["sampling_rate"]
         # unsqueeze to [B, T], if no batch, B=1
         wav = torch.tensor(wav).unsqueeze(0)
@@ -47,6 +49,7 @@ class BaseCodec:
         with torch.no_grad():
             encoded_frames = self.model.encode(wav)
         codes = torch.cat([encoded[0] for encoded in encoded_frames], dim=-1).squeeze()  # [B, n_q, T]
-        if return_unit_only:
-            return codes
-        return encoded_frames
+        return ExtractedUnit(
+            unit=codes,
+            stuff_for_synth=encoded_frames
+        )

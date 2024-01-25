@@ -2,7 +2,7 @@ import nlp2
 import torch
 import os
 
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 from audiotools import AudioSignal
 
 
@@ -13,10 +13,11 @@ class BaseCodec:
             from funcodec.bin.codec_inference import Speech2Token
         except:
             raise Exception(
-                "Please install funcodec first. pip install git+https://github.com/alibaba-damo-academy/FunCodec.git")
+                "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git")
         os.makedirs("funcodec", exist_ok=True)
         self.config()
-        self.model = Speech2Token(self.config_path, self.ckpt_path, device='cuda')
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = Speech2Token(self.config_path, self.ckpt_path, device=self.device)
 
     def config(self):
         self.setting = "funcodec_zh_en_general_16k_nq32ds640"
@@ -30,26 +31,29 @@ class BaseCodec:
             f"funcodec/{self.setting}")
         self.ckpt_path = f"funcodec/{self.setting}/model.pth"
 
+    @torch.no_grad()
     def synth(self, data, local_save=True):
-        with torch.no_grad():
-            extract_data = self.extract_unit(data, return_unit_only=False)
-            audio_array = extract_data["recon_speech"][0].cpu().numpy()
-            if local_save:
-                audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
-                save_audio(extract_data["recon_speech"][0].cpu(), audio_path, self.sampling_rate)
-                data['audio'] = audio_path
-            else:
-                data['audio']['array'] = extract_data["recon_speech"][0].cpu().numpy()
-            return data
+        extracted_unit = self.extract_unit(data)
+        data['unit'] = extracted_unit.unit
+        extract_data = extracted_unit.stuff_for_synth
+        audio_array = extract_data["recon_speech"][0].cpu()
+        if local_save:
+            audio_path = f"dummy-funcodec-{self.setting}/{data['id']}.wav"
+            save_audio(audio_array, audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+        else:
+            data['audio']['array'] = audio_array.numpy()
+        return data
 
-    def extract_unit(self, data, return_unit_only=True):
-        with torch.no_grad():
-            audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
-
-            if audio_signal.sample_rate != self.sampling_rate:
-                audio_signal.resample(self.sampling_rate)
-
-            code_indices, code_embeddings, recon_speech, sub_quants = self.model(audio_signal.audio_data[0].cuda())
-            if return_unit_only:
-                return code_indices[0].permute(1, 0, 2).squeeze(0)
-            return {"code_indices": code_indices, "code_embeddings": code_embeddings, "recon_speech": recon_speech}
+    @torch.no_grad()
+    def extract_unit(self, data):
+        audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
+        if audio_signal.sample_rate != self.sampling_rate:
+            audio_signal.resample(self.sampling_rate)
+        code_indices, code_embeddings, recon_speech, sub_quants = self.model(
+            audio_signal.audio_data[0].to(self.device))
+        return ExtractedUnit(
+            unit=code_indices[0].permute(1, 0, 2).squeeze(0),
+            stuff_for_synth={"code_indices": code_indices, "code_embeddings": code_embeddings,
+                             "recon_speech": recon_speech}
+        )

@@ -12,7 +12,7 @@ from torch.nn.utils import remove_weight_norm
 from torch.nn.utils import spectral_norm
 from torch.nn.utils import weight_norm
 from librosa.util import normalize
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 
 LRELU_SLOPE = 0.1
 
@@ -24,7 +24,8 @@ class BaseCodec:
             self.config_path,
             self.ckpt_path,
             with_encoder=True)
-        self.model = self.model.cuda().eval()
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model = self.model.to(self.device).eval()
 
     def config(self):
         self.setting = "academicodec_hifi_24k_320d"
@@ -41,28 +42,31 @@ class BaseCodec:
             config = json.load(f)
             self.sampling_rate = config['sampling_rate']
 
+    @torch.no_grad()
     def synth(self, data, local_save=True):
-        with torch.no_grad():
-            acoustic_token = self.extract_unit(data, return_unit_only=False)
-            audio_values = self.model(acoustic_token)
-            if local_save:
-                audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-                save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
-                data['audio'] = audio_path
-            else:
-                data['audio']['array'] = audio_values.cpu().detach()[0].numpy()
-            return data
+        extracted_unit = self.extract_unit(data)
+        acoustic_token = extracted_unit.stuff_for_synth
+        data['unit'] = extracted_unit.unit
+        audio_values = self.model(acoustic_token)
+        if local_save:
+            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+            save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+        else:
+            data['audio']['array'] = audio_values.cpu().detach()[0].numpy()
+        return data
 
-    def extract_unit(self, data, return_unit_only=True):
-        with torch.no_grad():
-            audio_sample = data["audio"]["array"]
-            wav = normalize(audio_sample) * 0.95
-            wav = torch.tensor(wav, dtype=torch.float32)
-            wav = wav.unsqueeze(0).to('cuda')
-            acoustic_token = self.model.encode(wav)
-            if return_unit_only:
-                return acoustic_token.squeeze(0).permute(1, 0)
-            return acoustic_token
+    @torch.no_grad()
+    def extract_unit(self, data):
+        audio_sample = data["audio"]["array"]
+        wav = normalize(audio_sample) * 0.95
+        wav = torch.tensor(wav, dtype=torch.float32)
+        wav = wav.unsqueeze(0).to(self.device)
+        acoustic_token = self.model.encode(wav)
+        return ExtractedUnit(
+            unit=acoustic_token.squeeze(0).permute(1, 0),
+            stuff_for_synth=acoustic_token
+        )
 
 
 class AttrDict(dict):
@@ -606,7 +610,8 @@ class VQVAE(nn.Module):
                  ckpt_path,
                  with_encoder=False):
         super(VQVAE, self).__init__()
-        ckpt = torch.load(ckpt_path)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        ckpt = torch.load(ckpt_path, map_location=device)
         with open(config_path) as f:
             data = f.read()
         json_config = json.loads(data)

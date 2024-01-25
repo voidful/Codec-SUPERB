@@ -1,7 +1,5 @@
 import os
 
-import codec.general
-
 
 def load_codec(codec_name):
     module = __import__(f"codec.{codec_name}", fromlist=[codec_name])

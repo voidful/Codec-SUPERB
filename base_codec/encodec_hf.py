@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoModel, AutoProcessor
-from codec.general import save_audio
+from base_codec.general import save_audio, ExtractedUnit
 
 
 class BaseCodec:
@@ -16,7 +16,9 @@ class BaseCodec:
 
     @torch.no_grad()
     def synth(self, data, local_save=True):
-        encoder_outputs, padding_mask = self.extract_unit(data, return_unit_only=False)
+        extracted_unit = self.extract_unit(data)
+        data['unit'] = extracted_unit.unit
+        encoder_outputs, padding_mask = extracted_unit.stuff_for_synth
         audio_values = \
             self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, padding_mask)[0]
         if local_save:
@@ -28,12 +30,13 @@ class BaseCodec:
         return data
 
     @torch.no_grad()
-    def extract_unit(self, data, return_unit_only=True):
+    def extract_unit(self, data):
         audio_sample = data["audio"]["array"]
         inputs = self.processor(raw_audio=audio_sample, sampling_rate=self.sampling_rate, return_tensors="pt")
         input_values = inputs["input_values"].to(self.device)
         padding_mask = inputs["padding_mask"].to(self.device) if inputs["padding_mask"] is not None else None
         encoder_outputs = self.model.encode(input_values, padding_mask)
-        if return_unit_only:
-            return encoder_outputs.audio_codes.squeeze()
-        return encoder_outputs, padding_mask
+        return ExtractedUnit(
+            unit=encoder_outputs.audio_codes.squeeze(),
+            stuff_for_synth=(encoder_outputs, padding_mask)
+        )

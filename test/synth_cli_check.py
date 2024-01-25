@@ -45,7 +45,7 @@ def encodec_cli_operation(filename, codec_sampling_rate=24000):
 
 
 def encodec_python_operation(filename, codec_sampling_rate=24000):
-    codec = load_codec('encodec_24k')
+    codec = load_codec('encodec_24k_6bps')
     waveform, sample_rate = torchaudio.load(filename)
     resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=codec_sampling_rate)
     resampled_waveform = resampler(waveform)
@@ -56,7 +56,7 @@ def encodec_python_operation(filename, codec_sampling_rate=24000):
     # save audio_array to wav in local
     filename = filename.split('/')[-1].split('.')[0]
     output_filename = filename + '_encodec_our.wav'
-    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
+    torchaudio.save(output_filename, torch.tensor(np.array(audio_array)),
                     codec_sampling_rate,
                     encoding='PCM_S',
                     bits_per_sample=16)
@@ -92,7 +92,7 @@ def dac_16k_python_operation(filename, codec_sampling_rate=16000):
     # save audio_array to wav in local
     filename = filename.split('/')[-1].split('.')[0]
     output_filename = filename + '_dac_our.wav'
-    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
+    torchaudio.save(output_filename, torch.tensor(np.array(audio_array)),
                     codec_sampling_rate,
                     encoding='PCM_S',
                     bits_per_sample=16)
@@ -110,7 +110,7 @@ def dac_22k_python_operation(filename, codec_sampling_rate=16000):
     # save audio_array to wav in local
     filename = filename.split('/')[-1].split('.')[0]
     output_filename = filename + '_dac_our.wav'
-    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
+    torchaudio.save(output_filename, torch.tensor(np.array(audio_array)),
                     codec_sampling_rate,
                     encoding='PCM_S',
                     bits_per_sample=16)
@@ -128,7 +128,7 @@ def dac_48k_python_operation(filename, codec_sampling_rate=16000):
     # save audio_array to wav in local
     filename = filename.split('/')[-1].split('.')[0]
     output_filename = filename + '_dac_our.wav'
-    torchaudio.save(output_filename, torch.tensor(np.array([audio_array])),
+    torchaudio.save(output_filename, torch.tensor(np.array(audio_array)),
                     codec_sampling_rate,
                     encoding='PCM_S',
                     bits_per_sample=16)
