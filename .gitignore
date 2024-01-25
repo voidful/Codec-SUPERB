@@ -10,3 +10,5 @@
 !/test/codec/sample8_16k.wav
 !/test/codec/sample9_48k.wav
 !/test/codec/sample10_16k.wav
+
+__pycache__/
