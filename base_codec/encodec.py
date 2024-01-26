@@ -7,8 +7,10 @@ class BaseCodec:
         try:
             from encodec import EncodecModel
             from encodec.utils import convert_audio
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
             self.EncodecModel = EncodecModel
             self.convert_audio = convert_audio
+            self.model = self.EncodecModel.encodec_model_24khz().to(self.device)
         except:
             raise Exception("Please install encodec first. pip install encodec")
         self.config()
@@ -44,7 +46,7 @@ class BaseCodec:
         sr = torch.tensor(sr).unsqueeze(0)
         wav = self.convert_audio(wav, sr, self.model.sample_rate, self.model.channels)
         wav = wav.unsqueeze(0)
-        wav = wav.to(torch.float32)
+        wav = wav.to(torch.float32).to(self.device)
         # Extract discrete codes from EnCodec
         with torch.no_grad():
             encoded_frames = self.model.encode(wav)
