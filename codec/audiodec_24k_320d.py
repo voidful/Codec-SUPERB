@@ -17,7 +17,6 @@ class Codec(BaseCodec):
             'https://huggingface.co/AudioDecBenchmark/AudioDec/resolve/main/autoencoder/symAD_libritts_24000_hop300/config.yml',
             "audiodec_autoencoder_24k_320d")
         self.encoder_config_path = "audiodec_autoencoder_24k_320d/checkpoint-500000steps.pkl"
-
         # download decoder
         nlp2.download_file(
             'https://huggingface.co/AudioDecBenchmark/AudioDec/resolve/main/vocoder/AudioDec_v1_symAD_libritts_24000_hop300_clean/checkpoint-500000steps.pkl',
