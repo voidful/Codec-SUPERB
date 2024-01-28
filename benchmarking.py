@@ -6,12 +6,13 @@ import time
 from datetime import datetime
 
 import numpy as np
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 from collections import defaultdict
 from audiotools import AudioSignal
 from base_codec.general import pad_arrays_to_match
 from metrics import get_metrics
 import psutil
+from tqdm.auto import tqdm
 
 
 def compute_metrics(original, model, max_duration):
@@ -25,34 +26,20 @@ def compute_metrics(original, model, max_duration):
     return metrics
 
 
-def batched_dataset(dataset, batch_size):
-    batch = []
-    for item in dataset:
-        batch.append(item)
-        if len(batch) == batch_size:
-            yield batch
-            batch = []
-    if batch:
-        yield batch
-
-
 def process_entry(original_iter, model_iter, metrics_results, max_duration):
-    if isinstance(original_iter, dict):  # Single entry in streaming mode
-        metrics = compute_metrics(original_iter, model_iter, max_duration)
-        if metrics is not None:
-            metrics_results.append(metrics)
-    elif isinstance(original_iter, list):  # Batch of entries in batch mode
-        for o, m in zip(original_iter, model_iter):
-            metrics = compute_metrics(o, m, max_duration)
-            if metrics is not None:
-                metrics_results.append(metrics)
+    metrics = compute_metrics(original_iter, model_iter, max_duration)
+    if metrics is not None:
+        metrics_results.append(metrics)
 
 
-def evaluate_dataset(dataset_name, mode, batch_size, specific_models=None, max_duration=120):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120):
     start_time = time.time()  # Start time measurement
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
 
-    c = load_dataset(dataset_name, streaming=(mode == 'streaming'))
+    if os.path.exists(dataset_name):
+        c = load_from_disk(dataset_name)
+    else:
+        c = load_dataset(dataset_name, streaming=is_stream)
     models = [key for key in c.keys() if key != "original"]
 
     result_data = {}
@@ -64,9 +51,7 @@ def evaluate_dataset(dataset_name, mode, batch_size, specific_models=None, max_d
 
         # Process dataset
         metrics_results = []
-        dataset_iterable = c['original'] if mode == 'streaming' else batched_dataset(c['original'], batch_size)
-
-        for original_iter, model_iter in zip(dataset_iterable, c[model]):
+        for original_iter, model_iter in tqdm(zip(c['original'], c[model])):
             process_entry(original_iter, model_iter, metrics_results, max_duration)
 
         # Aggregate the metrics
@@ -107,8 +92,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate audio datasets.')
     parser.add_argument('--dataset', type=str, default="AudioDecBenchmark/librispeech_asr_dummy_synth",
                         help='Name of the dataset to evaluate')
-    parser.add_argument('--mode', type=str, choices=['batch', 'streaming'], default='streaming',
-                        help='Mode of dataset loading: batch or streaming')
+    parser.add_argument('--streaming', action='store_true', default=True, help='Evaluate in streaming mode')
     parser.add_argument('--batch', type=int, default=100,
                         help='Batch size for processing the dataset')
     parser.add_argument('--models', nargs='*', help='Specific models to evaluate')
@@ -116,4 +100,4 @@ if __name__ == "__main__":
                         help='Maximum duration of audio recordings in seconds')
 
     args = parser.parse_args()
-    evaluate_dataset(args.dataset, args.mode, args.batch, args.models, args.max_duration)
+    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration)
