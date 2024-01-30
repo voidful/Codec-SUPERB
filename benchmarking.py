@@ -12,7 +12,7 @@ from audiotools import AudioSignal
 from base_codec.general import pad_arrays_to_match
 from metrics import get_metrics
 import psutil
-from tqdm.auto import tqdm
+from tqdm.contrib.concurrent import process_map
 
 
 def compute_metrics(original, model, max_duration):
@@ -26,13 +26,16 @@ def compute_metrics(original, model, max_duration):
     return metrics
 
 
-def process_entry(original_iter, model_iter, metrics_results, max_duration):
+def process_entry(args):
+    original_iter, model_iter, max_duration = args
     metrics = compute_metrics(original_iter, model_iter, max_duration)
     if metrics is not None:
-        metrics_results.append(metrics)
+        return metrics
+    else:
+        return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10):
     start_time = time.time()  # Start time measurement
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
 
@@ -49,10 +52,12 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         print(f"Evaluating metrics for model: {model}")
         model_start_time = time.time()
 
-        # Process dataset
-        metrics_results = []
-        for original_iter, model_iter in tqdm(zip(c['original'], c[model])):
-            process_entry(original_iter, model_iter, metrics_results, max_duration)
+        # Process Dataset with Multi-Processing
+        args_list = [(original_iter, model_iter, max_duration) for original_iter, model_iter in
+                     zip(c['original'], c[model])]
+        metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize)
+        metrics_results = [metrics for metrics in metrics_results if metrics is not None]
+        # Process Dataset END
 
         # Aggregate the metrics
         aggregated_metrics = defaultdict(list)
@@ -98,6 +103,8 @@ if __name__ == "__main__":
     parser.add_argument('--models', nargs='*', help='Specific models to evaluate')
     parser.add_argument('--max_duration', type=int, default=120,
                         help='Maximum duration of audio recordings in seconds')
+    parser.add_argument('--max_workers', type=int, default=4, help='Number of workers for multi-processing')
+    parser.add_argument('--chunksize', type=int, default=10, help='Chunk size for multi-processing')
 
     args = parser.parse_args()
-    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration)
+    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize)
