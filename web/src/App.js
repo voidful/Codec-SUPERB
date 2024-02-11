@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import ResultsTable from './ResultsTable'
 import './App.css'
+import Header from './Header';
+
 
 function App() {
   const [dataset, setDataset] = useState('librispeech_asr_dummy');
@@ -68,6 +70,7 @@ function App() {
 
   return (
     <div className="App">
+      <Header />
       <h1>Results</h1>
       <div>
         <label>Select Dataset: </label>

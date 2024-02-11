@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate audio datasets.')
     parser.add_argument('--dataset', type=str, default="AudioDecBenchmark/librispeech_asr_dummy_synth",
                         help='Name of the dataset to evaluate')
-    parser.add_argument('--streaming', action='store_true', default=True, help='Evaluate in streaming mode')
+    parser.add_argument('--streaming', action='store_true', help='Evaluate in streaming mode')
     parser.add_argument('--batch', type=int, default=100,
                         help='Batch size for processing the dataset')
     parser.add_argument('--models', nargs='*', help='Specific models to evaluate')
