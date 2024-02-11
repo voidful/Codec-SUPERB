@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import ResultsTable from './ResultsTable'
 import './App.css'
 import Header from './Header';
-
+import Card from './Card';
+import EERvsBPSChart from './EERvsBPSChart';
 
 function App() {
   const [dataset, setDataset] = useState('librispeech_asr_dummy');
@@ -71,18 +72,33 @@ function App() {
   return (
     <div className="App">
       <Header />
-      <h1>Results</h1>
-      <div>
-        <label>Select Dataset: </label>
-        <select value={dataset} onChange={(e) => setDataset(e.target.value)}>
-          {Object.keys(results).map((key) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
-        </select>
-      </div>
-      <ResultsTable dataset={dataset} results={results} />
+      <div className="landing-page">
+      <Card title="Welcome to Codec Superb!">
+        <p>Behold! This is the no sidebar layout with no sidebar at all!</p>
+      </Card>
+      <Card title="Graph">
+        <p>Behold! This is the no sidebar layout with no sidebar at all!</p>
+      </Card>
+      <Card title="Graph">
+        <EERvsBPSChart></EERvsBPSChart>
+      </Card>
+      <Card>
+          <h1>Results</h1>
+          <div>
+            <label>Select Dataset: </label>
+            <select value={dataset} onChange={(e) => setDataset(e.target.value)}>
+              {Object.keys(results).map((key) => (
+                <option key={key} value={key}>
+                  {key}
+                </option>
+              ))}
+            </select>
+          </div>
+          <ResultsTable dataset={dataset} results={results} />
+      </Card>
+    </div>
+
+
     </div>
   );
 }
