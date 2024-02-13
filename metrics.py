@@ -1,13 +1,17 @@
 import typing
 from typing import List
+
+import librosa
 import torch
 from audiotools import AudioSignal
 from audiotools import STFTParams
 from torch import nn
-from scipy.linalg import toeplitz, norm
+from scipy.linalg import norm
 from scipy import signal
 from pesq import pesq
 import numpy as np
+import parselmouth
+from torchmetrics import PearsonCorrCoef
 
 
 class PESQ(nn.Module):
@@ -37,7 +41,8 @@ class STOI(nn.Module):
             estimates = np.expand_dims(estimates, axis=0)
 
         stoi_scores = [stoi(ref, est, sample_rate) for ref, est in zip(references, estimates)]
-        return np.mean(stoi_scores)
+        stoi_scores_clipped = np.clip(stoi_scores, 0.0, 1.0)
+        return np.mean(stoi_scores_clipped)
 
 
 class L1Loss(nn.L1Loss):
@@ -465,6 +470,158 @@ def get_metrics(signal, recons):
         return metrics
 
 
+class JsonHParams:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if type(v) == dict:
+                v = JsonHParams(**v)
+            self[k] = v
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def items(self):
+        return self.__dict__.items()
+
+    def values(self):
+        return self.__dict__.values()
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)
+
+    def __contains__(self, key):
+        return key in self.__dict__
+
+    def __repr__(self):
+        return self.__dict__.__repr__()
+
+
+class F0CorrLoss(torch.nn.Module):
+    def __init__(self, sample_rate=22050, hop_length=256, f0_min=50, f0_max=1100, pitch_bin=256, pitch_min=50,
+                 pitch_max=1100, need_mean=True, method="dtw"):
+        super(F0CorrLoss, self).__init__()
+        self.sample_rate = sample_rate
+        self.hop_length = hop_length
+        self.f0_min = f0_min
+        self.f0_max = f0_max
+        self.pitch_bin = pitch_bin
+        self.pitch_min = pitch_min
+        self.pitch_max = pitch_max
+        self.need_mean = need_mean
+        self.method = method
+        self.pearson = PearsonCorrCoef()
+
+    def f0_to_coarse(self, f0, pitch_bin, pitch_min, pitch_max):
+        f0_mel_min = 1127 * np.log(1 + pitch_min / 700)
+        f0_mel_max = 1127 * np.log(1 + pitch_max / 700)
+        is_torch = isinstance(f0, torch.Tensor)
+        f0_mel = 1127 * (1 + f0 / 700).log() if is_torch else 1127 * np.log(1 + f0 / 700)
+        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * (pitch_bin - 2) / (
+                f0_mel_max - f0_mel_min
+        ) + 1
+        f0_mel[f0_mel <= 1] = 1
+        f0_mel[f0_mel > pitch_bin - 1] = pitch_bin - 1
+        f0_coarse = (f0_mel + 0.5).long() if is_torch else np.rint(f0_mel).astype(np.int32)
+        assert f0_coarse.max() <= 255 and f0_coarse.min() >= 1, (
+            f0_coarse.max(),
+            f0_coarse.min(),
+        )
+        return f0_coarse
+
+    def get_f0_features_using_parselmouth(self, audio, cfg, speed=1):
+        hop_size = int(np.round(cfg.hop_size * speed))
+
+        # Calculate the time step for pitch extraction
+        time_step = hop_size / cfg.sample_rate * 1000
+
+        f0 = (
+            parselmouth.Sound(audio, cfg.sample_rate)
+            .to_pitch_ac(
+                time_step=time_step / 1000,
+                voicing_threshold=0.6,
+                pitch_floor=cfg.f0_min,
+                pitch_ceiling=cfg.f0_max,
+            )
+            .selected_array["frequency"]
+        )
+
+        # Pad the pitch to the mel_len
+        # pad_size = (int(len(audio) // hop_size) - len(f0) + 1) // 2
+        # f0 = np.pad(f0, [[pad_size, mel_len - len(f0) - pad_size]], mode="constant")
+
+        # Get the coarse part
+        pitch_coarse = self.f0_to_coarse(f0, cfg.pitch_bin, cfg.f0_min, cfg.f0_max)
+        return f0, pitch_coarse
+
+    def get_cents(self, f0_hz):
+        """
+        F_{cent} = 1200 * log2 (F/440)
+
+        Reference:
+            APSIPA'17, Perceptual Evaluation of Singing Quality
+        """
+        voiced_f0 = f0_hz[f0_hz != 0]
+        return 1200 * np.log2(voiced_f0 / 440)
+
+    def get_pitch_sub_median(self, f0_hz):
+        """
+        f0_hz: (,T)
+        """
+        f0_cent = self.get_cents(f0_hz)
+        return f0_cent - np.median(f0_cent)
+
+    def process_audio(self, audio):
+        # Initialize config
+        cfg = JsonHParams()
+        cfg.sample_rate = self.sample_rate
+        cfg.hop_size = self.hop_length
+        cfg.f0_min = self.f0_min
+        cfg.f0_max = self.f0_max
+        cfg.pitch_bin = self.pitch_bin
+        cfg.pitch_max = self.pitch_max
+        cfg.pitch_min = self.pitch_min
+
+        # Extract F0
+        f0 = self.get_f0_features_using_parselmouth(audio.audio_data[0].cpu().detach().numpy(), cfg)[0]
+
+        # Subtract mean if needed
+        if self.need_mean:
+            f0 = torch.from_numpy(f0)
+            f0 = self.get_pitch_sub_median(f0).numpy()
+
+        return f0
+
+    def forward(self, audio_ref, audio_deg):
+        f0_ref = self.process_audio(audio_ref)
+        f0_deg = self.process_audio(audio_deg)
+
+        # Avoid silence
+        min_length = min(len(f0_ref), len(f0_deg))
+        if min_length <= 1:
+            return torch.tensor(1.0)
+
+        # F0 length alignment
+        if self.method == "cut":
+            length = min(len(f0_ref), len(f0_deg))
+            f0_ref = f0_ref[:length]
+            f0_deg = f0_deg[:length]
+        elif self.method == "dtw":
+            _, wp = librosa.sequence.dtw(f0_ref, f0_deg, backtrack=True)
+            f0_ref = np.array([f0_ref[gt_index] for gt_index, _ in wp])
+            f0_deg = np.array([f0_deg[pred_index] for _, pred_index in wp])
+
+        # Convert to tensor and calculate Pearson correlation coefficient
+        f0_ref = torch.from_numpy(f0_ref).float()
+        f0_deg = torch.from_numpy(f0_deg).float()
+        return self.pearson(f0_ref, f0_deg)
+
+
 waveform_loss = L1Loss()
 stft_loss = MultiScaleSTFTLoss()
 mel_loss = MelSpectrogramLoss()
@@ -472,3 +629,4 @@ sisdr_loss = SISDRLoss()
 snr_loss = SignalToNoiseRatioLoss()
 pesqfn = PESQ()
 stoifn = STOI()
+f0corr = F0CorrLoss()

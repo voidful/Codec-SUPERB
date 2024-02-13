@@ -37,7 +37,7 @@ const ResultsTable = ({ dataset, results }) => {
   } = useTable({ columns, data });
 
   return (
-    <table {...getTableProps()} style={{ border: 'solid 1px blue' }}>
+    <table {...getTableProps()} style={{ border: 'solid 1px #333' }}>
       <thead>
         {headerGroups.map(headerGroup => (
           <tr {...headerGroup.getHeaderGroupProps()}>
@@ -45,8 +45,8 @@ const ResultsTable = ({ dataset, results }) => {
               <th
                 {...column.getHeaderProps()}
                 style={{
-                  borderBottom: 'solid 3px red',
-                  background: 'aliceblue',
+                  borderBottom: 'solid 3px #333',
+                  background: '#e0e0e0',
                   color: 'black',
                   fontWeight: 'bold',
                 }}
@@ -67,8 +67,8 @@ const ResultsTable = ({ dataset, results }) => {
                   {...cell.getCellProps()}
                   style={{
                     padding: '10px',
-                    border: 'solid 1px gray',
-                    background: 'papayawhip',
+                    border: 'solid 1px #333',
+                    background: '#f9f9f9',
                   }}
                 >
                   {cell.render('Cell')}

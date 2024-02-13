@@ -2,7 +2,7 @@ import argparse
 import itertools
 import numpy as np
 from datasets import load_dataset
-from codec import list_codec
+from AudCodec.codec import list_codec
 
 
 def load_datasets(dataset_name, splits):

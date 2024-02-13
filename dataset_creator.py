@@ -1,9 +1,8 @@
 import argparse
 from datasets import DatasetDict, Audio, load_from_disk
-from codec import load_codec, list_codec
-from dataset import load_dataset
-import dataset as ds_module
-from dataset.general import extract_unit
+from AudCodec.codec import load_codec, list_codec
+from AudCodec.dataset import load_dataset
+from AudCodec.dataset.general import extract_unit
 
 
 def run_experiment(dataset_name):
@@ -15,7 +14,7 @@ def run_experiment(dataset_name):
     cleaned_dataset = cleaned_dataset.filter(
         lambda x: len(x['audio']['array']) / x['audio']['sampling_rate'] <= args.max_duration)
     print("after filter duration", cleaned_dataset)
-    cleaned_dataset = ds_module.general.apply_audio_cast(cleaned_dataset, sampling_rate)
+    cleaned_dataset = acodec.dataset.general.apply_audio_cast(cleaned_dataset, sampling_rate)
     if not args.extract_unit_only:
         datasets_dict = DatasetDict({'original': cleaned_dataset})
     else:
@@ -30,7 +29,7 @@ def run_experiment(dataset_name):
         except:
             pass
         codec = load_codec(codec_name)
-        synthesized_dataset = ds_module.general.apply_audio_cast(cleaned_dataset, codec.sampling_rate)
+        synthesized_dataset = acodec.dataset.general.apply_audio_cast(cleaned_dataset, codec.sampling_rate)
         if args.extract_unit_only == 'extract_unit':
             synthesized_dataset = synthesized_dataset.map(extract_unit, fn_kwargs={'extract_unit_class': codec})
         else:
