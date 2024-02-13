@@ -8,3 +8,5 @@ librosa==0.10.1
 pesq==0.0.4
 descript-audiotools
 psutil
+praat-parselmouth
+torchmetrics

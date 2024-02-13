@@ -1,14 +1,14 @@
 *.wav
-/test/**/
-!/test/sample1_16k.wav
-!/test/sample2_22k.wav
-!/test/sample3_48k.wav
-!/test/sample4_16k.wav
-!/test/sample5_16k.wav
-!/test/sample6_48k.wav
-!/test/sample7_16k.wav
-!/test/sample8_16k.wav
-!/test/sample9_48k.wav
-!/test/sample10_16k.wav
+/AudCodec/test/**/
+!/AudCodec/test/sample1_16k.wav
+!/AudCodec/test/sample2_22k.wav
+!/AudCodec/test/sample3_48k.wav
+!/AudCodec/test/sample4_16k.wav
+!/AudCodec/test/sample5_16k.wav
+!/AudCodec/test/sample6_48k.wav
+!/AudCodec/test/sample7_16k.wav
+!/AudCodec/test/sample8_16k.wav
+!/AudCodec/test/sample9_48k.wav
+!/AudCodec/test/sample10_16k.wav
 
 __pycache__/

@@ -3,7 +3,7 @@ import ResultsTable from './ResultsTable'
 import './App.css'
 import Header from './Header';
 import Card from './Card';
-import EERvsBPSChart from './EERvsBPSChart';
+import EERvsBPSChart from './XvsBPSChart';
 
 function App() {
   const [dataset, setDataset] = useState('librispeech_asr_dummy');
