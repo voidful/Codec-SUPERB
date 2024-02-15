@@ -1,6 +1,6 @@
 # Codec-SUPERB: Audio Codec Speech Processing Universal Performance Benchmark
 
-![Overview](SoundCodec/img/Overview.png)
+![Overview](img/Overview.png)
 
 Codec-SUPERB is a comprehensive benchmark designed to evaluate audio codec models across a variety of speech tasks. Our
 goal is to facilitate community collaboration and accelerate advancements in the field of speech processing by
