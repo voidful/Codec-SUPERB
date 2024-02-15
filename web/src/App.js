@@ -12,7 +12,7 @@ function App() {
       <div className="landing-page">
       <Card title="Welcome to Codec Superb!">
         <p>This study introduces Codec-SUPERB, a benchmark for evaluating sound codec models across key tasks, promoting advancements through a community-driven database and in-depth analysis.</p>
-        <img src="overview.png" alt="Codec Superb Overview" />
+        <img src="Overview.png" alt="Codec Superb Overview" />
       </Card>
       <Card>
           <h1>Results</h1>
