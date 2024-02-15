@@ -1,6 +1,6 @@
 import argparse
 from datasets import Audio, Dataset, Value, Sequence
-from AudCodec.codec import load_codec, list_codec
+from SoundCodec.codec import load_codec, list_codec
 from datasets import load_dataset
 
 

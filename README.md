@@ -1,11 +1,10 @@
 # Codec-SUPERB: Audio Codec Speech Processing Universal Performance Benchmark
 
-![Overview](AudCodec/img/Overview.png)
+![Overview](SoundCodec/img/Overview.png)
 
 Codec-SUPERB is a comprehensive benchmark designed to evaluate audio codec models across a variety of speech tasks. Our
 goal is to facilitate community collaboration and accelerate advancements in the field of speech processing by
 preserving and enhancing speech information quality.
-
 
 ## Table of Contents
 
@@ -13,7 +12,6 @@ preserving and enhancing speech information quality.
 - [Key Features](#key-features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Benchmarking](#benchmarking)
 - [Contribution](#contribution)
 - [License](#license)
 
@@ -26,17 +24,22 @@ in audio quality and processing efficiency.
 ## Key Features
 
 ### Out-of-the-Box Codec Interface
+
 Codec-SUPERB offers an intuitive, out-of-the-box codec interface that allows for easy integration and testing of various
 codec models, facilitating quick iterations and experiments.
 
 ### Multi-Perspective Leaderboard
-Codec-SUPERB's unique blend of multi-perspective evaluation and an online leaderboard drives innovation in audio codec research by providing a comprehensive assessment and fostering competitive transparency among developers.
+
+Codec-SUPERB's unique blend of multi-perspective evaluation and an online leaderboard drives innovation in audio codec
+research by providing a comprehensive assessment and fostering competitive transparency among developers.
 
 ### Standardized Environment
+
 We ensure a standardized testing environment to guarantee fair and consistent comparison across all models. This
 uniformity brings reliability to benchmark results, making them universally interpretable.
 
 ### Unified Datasets
+
 We provide a collection of unified datasets, curated to test a wide range of speech processing scenarios. This ensures
 that models are evaluated under diverse conditions, reflecting real-world applications.
 
@@ -50,13 +53,31 @@ pip install -r requirements.txt
 
 ## Usage
 
-Detailed instructions on how to use Codec-SUPERB, including preparing your codec model and executing benchmark tests,
-can be found in the `docs` directory.
+### [Leaderboard]()
 
-## Benchmarking
+### Out of the Box Codec Interface
 
-Codec-SUPERB supports a comprehensive suite of speech tasks, from speech recognition to audio quality assessment, each
-designed to rigorously evaluate the capabilities of audio codec models.
+```python
+from SoundCodec import codec
+import torchaudio
+
+# get all available codec
+print(codec.list_codec())
+# load codec by name, use encodec as example
+encodec_24k_6bps = codec.load_codec('encodec_24k_6bps')
+
+# load audio
+waveform, sample_rate = torchaudio.load('sample audio')
+resampled_waveform = waveform.numpy()[-1]
+data_item = {'audio': {'array': resampled_waveform,
+                       'sampling_rate': sample_rate}}
+
+# extract unit
+sound_unit = encodec_24k_6bps.extract_unit(data_item).unit
+
+# sound synthesis
+decoded_waveform = encodec_24k_6bps.synth(sound_unit, local_save=False)['audio']['array']
+```
 
 ## Contribution
 
@@ -66,7 +87,6 @@ enhancing the benchmarking framework. Please see `CONTRIBUTING.md` for more deta
 ## License
 
 This project is licensed under the MIT License - see the `LICENSE` file for details.
-
 
 ## Reference Audio Codec Repositories：
 

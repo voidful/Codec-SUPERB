@@ -9,7 +9,7 @@ import numpy as np
 from datasets import load_dataset, load_from_disk
 from collections import defaultdict
 from audiotools import AudioSignal
-from AudCodec.base_codec.general import pad_arrays_to_match
+from SoundCodec.base_codec.general import pad_arrays_to_match
 from metrics import get_metrics
 import psutil
 from tqdm.contrib.concurrent import process_map
