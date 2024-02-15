@@ -15,6 +15,12 @@ import psutil
 from tqdm.contrib.concurrent import process_map
 
 
+def default_converter(o):
+    if isinstance(o, np.float32):
+        return float(o)
+    raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
+
+
 def compute_metrics(original, model, max_duration):
     original_arrays, resynth_array = pad_arrays_to_match(original['audio']['array'], model['audio']['array'])
     sampling_rate = original['audio']['sampling_rate']
@@ -80,7 +86,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     # Save results
     output_file_name = f"{dataset_name.replace('/', '_')}_evaluation_results.json"
     with open(output_file_name, 'w') as out_file:
-        json.dump(result_data, out_file, indent=4)
+        json.dump(result_data, out_file, indent=4, default=default_converter)
 
     base_filename = f"{args.dataset.replace('/', '_')}_evaluation_results"
     timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
@@ -88,7 +94,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
 
     # Save results to the file
     with open(output_file_name, 'w') as out_file:
-        json.dump(result_data, out_file, indent=4)
+        json.dump(result_data, out_file, indent=4, default=default_converter)
 
     print(f"Results saved to {output_file_name}")
 
