@@ -1,4 +1,4 @@
-# Codec-SUPERB: Audio Codec Speech Processing Universal Performance Benchmark
+# Codec-SUPERB: Sound Codec Speech Processing Universal Performance Benchmark
 
 ![Overview](img/Overview.png)
 
@@ -17,7 +17,7 @@ preserving and enhancing speech information quality.
 
 ## Introduction
 
-Codec-SUPERB sets a new benchmark in evaluating audio codec models, providing a rigorous and transparent framework for
+Codec-SUPERB sets a new benchmark in evaluating sound codec models, providing a rigorous and transparent framework for
 assessing performance across a range of speech processing tasks. Our goal is to foster innovation and set new standards
 in audio quality and processing efficiency.
 
@@ -30,7 +30,7 @@ codec models, facilitating quick iterations and experiments.
 
 ### Multi-Perspective Leaderboard
 
-Codec-SUPERB's unique blend of multi-perspective evaluation and an online leaderboard drives innovation in audio codec
+Codec-SUPERB's unique blend of multi-perspective evaluation and an online leaderboard drives innovation in sound codec
 research by providing a comprehensive assessment and fostering competitive transparency among developers.
 
 ### Standardized Environment
@@ -88,7 +88,7 @@ enhancing the benchmarking framework. Please see `CONTRIBUTING.md` for more deta
 
 This project is licensed under the MIT License - see the `LICENSE` file for details.
 
-## Reference Audio Codec Repositories：
+## Reference Sound Codec Repositories：
 
 - https://github.com/ZhangXInFD/SpeechTokenizer
 - https://github.com/descriptinc/descript-audio-codec
