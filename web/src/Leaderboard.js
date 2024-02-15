@@ -1,32 +1,32 @@
 import React from 'react';
-import { useTable } from 'react-table';
-import './ResultsTable.css';
+import { useTable, useSortBy } from 'react-table';
+import './Leaderboard.css';
 
-const ResultsTable = ({ dataset, results }) => {
+const Leaderboard = ({ results }) => {
   const data = React.useMemo(() => {
-    if (!results[dataset]) return [];
-    return Object.entries(results[dataset]).map(([key, value]) => {
-      return {
-        col1: key,
-        ...value,
-      };
-    });
-  }, [dataset, results]);
+    return Object.entries(results).map(([key, value]) => ({
+      model: key,
+      ...Object.keys(value).reduce((acc, curr) => {
+        acc[curr] = parseFloat(value[curr].toFixed(3));
+        return acc;
+      }, {}),
+    }));
+  }, [results]);
 
   const columns = React.useMemo(() => {
-    if (!results[dataset]) return [];
-    const firstKey = Object.keys(results[dataset])[0];
+    const firstItem = results[Object.keys(results)[0]];
     return [
       {
         Header: 'Model',
-        accessor: 'col1',
+        accessor: 'model',
       },
-      ...Object.keys(results[dataset][firstKey]).map((key) => ({
+      ...Object.keys(firstItem).map(key => ({
         Header: key.toUpperCase(),
         accessor: key,
+        sortType: (a, b) => a.original[key] - b.original[key],
       })),
     ];
-  }, [dataset, results]);
+  }, [results]);
 
   const {
     getTableProps,
@@ -34,7 +34,7 @@ const ResultsTable = ({ dataset, results }) => {
     headerGroups,
     rows,
     prepareRow,
-  } = useTable({ columns, data });
+  } = useTable({ columns, data }, useSortBy);
 
   return (
     <table {...getTableProps()} style={{ border: 'solid 1px #333' }}>
@@ -43,15 +43,19 @@ const ResultsTable = ({ dataset, results }) => {
           <tr {...headerGroup.getHeaderGroupProps()}>
             {headerGroup.headers.map(column => (
               <th
-                {...column.getHeaderProps()}
+                {...column.getHeaderProps(column.getSortByToggleProps())}
                 style={{
                   borderBottom: 'solid 3px #333',
                   background: '#e0e0e0',
                   color: 'black',
                   fontWeight: 'bold',
+                  cursor: 'pointer',
                 }}
               >
                 {column.render('Header')}
+                <span>
+                  {column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''}
+                </span>
               </th>
             ))}
           </tr>
@@ -59,7 +63,7 @@ const ResultsTable = ({ dataset, results }) => {
       </thead>
       <tbody {...getTableBodyProps()}>
         {rows.map(row => {
-          prepareRow(row)
+          prepareRow(row);
           return (
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => (
@@ -75,11 +79,11 @@ const ResultsTable = ({ dataset, results }) => {
                 </td>
               ))}
             </tr>
-          )
+          );
         })}
       </tbody>
     </table>
   );
 };
 
-export default ResultsTable;
+export default Leaderboard;
