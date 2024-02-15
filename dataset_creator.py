@@ -1,8 +1,8 @@
 import argparse
 from datasets import DatasetDict, Audio, load_from_disk
-from AudCodec.codec import load_codec, list_codec
-from AudCodec.dataset import load_dataset
-from AudCodec.dataset.general import extract_unit
+from SoundCodec.codec import load_codec, list_codec
+from SoundCodec.dataset import load_dataset
+from SoundCodec.dataset.general import extract_unit
 
 
 def run_experiment(dataset_name):
