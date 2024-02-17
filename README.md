@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### [Leaderboard]()
+### [Leaderboard](https://codecsuperb.com)
 
 ### Out of the Box Codec Interface
 
