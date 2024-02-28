@@ -45,15 +45,14 @@ class BaseCodec:
     @torch.no_grad()
     def synth(self, data, local_save=True):
         extracted_unit = self.extract_unit(data)
-        acoustic_token = extracted_unit.stuff_for_synth
+        audio_array = self.decode_unit(extracted_unit.stuff_for_synth)
         data['unit'] = extracted_unit.unit
-        audio_values = self.model(acoustic_token)
         if local_save:
             audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-            save_audio(audio_values.cpu().detach()[0], audio_path, self.sampling_rate)
+            save_audio(audio_array, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
-            data['audio']['array'] = audio_values.cpu().detach()[0].numpy()
+            data['audio']['array'] = audio_array
         return data
 
     @torch.no_grad()
@@ -67,6 +66,11 @@ class BaseCodec:
             unit=acoustic_token.squeeze(0).permute(1, 0),
             stuff_for_synth=acoustic_token
         )
+
+    @torch.no_grad()
+    def decode_unit(self, stuff_for_synth):
+        audio_values = self.model(stuff_for_synth)
+        return audio_values.cpu().detach()[0].numpy()
 
 
 class AttrDict(dict):
