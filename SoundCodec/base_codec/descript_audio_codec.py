@@ -46,3 +46,9 @@ class BaseCodec:
             unit=codes,
             stuff_for_synth=(compressed_audio, codes)
         )
+
+    @torch.no_grad()
+    def decode_unit(self, stuff_for_synth):
+        compressed_audio, unit_only = stuff_for_synth
+        decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
+        return decompressed_audio.cpu().numpy()

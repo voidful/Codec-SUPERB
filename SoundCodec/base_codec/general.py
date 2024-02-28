@@ -25,7 +25,7 @@ class ExtractedUnit:
 
     def to_dict(self):
         return {
-            'unit': self.unit,
+            'unit': self.unit,  # torch.Tensor with shape [codec_layer, time_dim]
             'stuff_for_synth': self.stuff_for_synth
         }
 

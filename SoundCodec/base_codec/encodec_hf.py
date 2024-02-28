@@ -18,15 +18,13 @@ class BaseCodec:
     def synth(self, data, local_save=True):
         extracted_unit = self.extract_unit(data)
         data['unit'] = extracted_unit.unit
-        encoder_outputs, padding_mask = extracted_unit.stuff_for_synth
-        audio_values = \
-            self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, padding_mask)[0]
+        audio_values = self.decode_unit(extracted_unit.stuff_for_synth)
         if local_save:
             audio_path = f"dummy_{self.pretrained_model_name}/{data['id']}.wav"
-            save_audio(audio_values[0].cpu(), audio_path, self.sampling_rate)
+            save_audio(audio_values, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
-            data['audio']['array'] = audio_values[0].cpu().numpy()
+            data['audio']['array'] = audio_values
         return data
 
     @torch.no_grad()
@@ -40,3 +38,10 @@ class BaseCodec:
             unit=encoder_outputs.audio_codes.squeeze(),
             stuff_for_synth=(encoder_outputs, padding_mask)
         )
+
+    @torch.no_grad()
+    def decode_unit(self, stuff_for_synth):
+        encoder_outputs, padding_mask = stuff_for_synth
+        audio_values = \
+            self.model.decode(encoder_outputs.audio_codes, encoder_outputs.audio_scales, padding_mask)[0]
+        return audio_values[0].cpu().numpy()

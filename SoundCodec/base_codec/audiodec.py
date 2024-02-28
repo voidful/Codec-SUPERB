@@ -44,16 +44,14 @@ class BaseCodec:
     @torch.no_grad()
     def synth(self, data, local_save=True):
         extracted_unit = self.extract_unit(data)
-        _, codes = extracted_unit.stuff_for_synth
+        audio_array = self.decode_unit(extracted_unit.stuff_for_synth)
         data['unit'] = extracted_unit.unit
-        zq = self.model.rx_encoder.lookup(codes)
-        y = self.model.decoder.decode(zq)
         if local_save:
             audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-            save_audio(y[0].cpu().detach(), audio_path, self.sampling_rate)
+            save_audio(audio_array, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
-            data['audio']['array'] = y[0].cpu().detach().numpy()
+            data['audio']['array'] = audio_array
         return data
 
     @torch.no_grad()
@@ -73,3 +71,10 @@ class BaseCodec:
             unit=codes,
             stuff_for_synth=(zq, codes)
         )
+
+    @torch.no_grad()
+    def decode_unit(self, stuff_for_synth):
+        _, codes = stuff_for_synth
+        zq = self.model.rx_encoder.lookup(codes)
+        y = self.model.decoder.decode(zq)
+        return y[0].cpu().detach().numpy()
