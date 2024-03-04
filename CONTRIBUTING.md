@@ -47,15 +47,21 @@ We welcome contributions to Codec-SUPERB in several areas: models, datasets, and
 ## Contributing Datasets
 
 1. Fork the Codec-SUPERB repository.
-2. Add your dataset to the `datasets` directory. Please ensure your dataset adheres to the format defined in `datasets/README.md`.
+2. Add your dataset to the `datasets` directory.
+   - add a python file with dataset's name, eg. ds_name.py
+   - ds_name should include a function:
+     ```python
+        def load_data():
+             # your load data code here
+             # return a dataset object
+             # it should include at least two key: 'audio' and 'id'
+            pass
+     ```
 3. Add tests for your dataset in the `tests` directory.
 4. Submit a pull request with your changes. Please include a detailed description of your dataset and how it improves Codec-SUPERB.
 
 ## Contributing Metrics
 
 1. Fork the Codec-SUPERB repository.
-2. Add your metric to the `metrics` directory. Please ensure your metric adheres to the interface defined in `metrics/README.md`.
+2. Add your metric to the `metrics.py` file, following the existing format.
 3. Add tests for your metric in the `tests` directory.
-4. Submit a pull request with your changes. Please include a detailed description of your metric and how it improves Codec-SUPERB.
-
-We look forward to your contributions!
