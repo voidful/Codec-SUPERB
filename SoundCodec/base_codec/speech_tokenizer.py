@@ -47,9 +47,6 @@ class BaseCodec:
     @torch.no_grad()
     def extract_unit(self, data):
         wav = torch.tensor(numpy.array([data["audio"]['array']]), dtype=torch.float32).to(self.device)
-        sampling_rate = data["audio"]['sampling_rate']
-        if sampling_rate != self.sampling_rate:
-            wav = torchaudio.functional.resample(wav, sampling_rate, self.sampling_rate)
         wav = wav.unsqueeze(0)
         codes = self.model.encode(wav.to(self.device))
         return ExtractedUnit(
