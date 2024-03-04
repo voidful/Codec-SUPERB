@@ -39,8 +39,6 @@ class BaseCodec:
         wav, sr = data["audio"]["array"], data["audio"]["sampling_rate"]
         # unsqueeze to [B, T], if no batch, B=1
         wav = torch.tensor(wav).unsqueeze(0)
-        sr = torch.tensor(sr).unsqueeze(0)
-        wav = self.convert_audio(wav, sr, self.model.sample_rate, self.model.channels)
         wav = wav.unsqueeze(0)
         wav = wav.to(torch.float32).to(self.device)
         # Extract discrete codes from EnCodec
