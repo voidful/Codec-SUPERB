@@ -47,8 +47,6 @@ class BaseCodec:
     @torch.no_grad()
     def extract_unit(self, data):
         audio_signal = AudioSignal(data["audio"]['array'], data["audio"]['sampling_rate'])
-        if audio_signal.sample_rate != self.sampling_rate:
-            audio_signal.resample(self.sampling_rate)
         code_indices, code_embeddings, recon_speech, sub_quants = self.model(
             audio_signal.audio_data[0].to(self.device))
         return ExtractedUnit(
