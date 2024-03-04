@@ -1,6 +1,7 @@
 import argparse
 from datasets import Audio, Dataset, Value, Sequence
 from SoundCodec.codec import load_codec, list_codec
+from SoundCodec.dataset.general import apply_audio_cast
 from datasets import load_dataset
 
 
@@ -11,7 +12,7 @@ def load_dataset_streaming(dataset_name):
 def add_codec_split(cleaned_dataset, codec_name):
     codec = load_codec(codec_name)
     original_sampling_rate = cleaned_dataset.features['audio'].sampling_rate
-    cleaned_dataset = acodec.dataset.general.apply_audio_cast(cleaned_dataset, codec.sampling_rate)
+    cleaned_dataset = apply_audio_cast(cleaned_dataset, codec.sampling_rate)
     features = cleaned_dataset.features.copy()
     features['unit'] = Sequence(feature=Sequence(feature=Value(dtype='int64', id=None)))
     cleaned_dataset = cleaned_dataset.map(codec.synth, features=features)
