@@ -6,6 +6,8 @@ Codec-SUPERB is a comprehensive benchmark designed to evaluate audio codec model
 goal is to facilitate community collaboration and accelerate advancements in the field of speech processing by
 preserving and enhancing speech information quality.
 
+<a href='https://codecsuperb.com/'><img src='https://img.shields.io/badge/Project-Page-Green'></a>  <a href='https://arxiv.org/abs/2402.13071'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
+
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -79,6 +81,18 @@ sound_unit = encodec_24k_6bps.extract_unit(data_item).unit
 decoded_waveform = encodec_24k_6bps.synth(sound_unit, local_save=False)['audio']['array']
 ```
 
+## Citation
+If you use this code or result in your paper, please cite our work as:
+```Tex
+@misc{wu2024codecsuperb,
+      title={Codec-SUPERB: An In-Depth Analysis of Sound Codec Models}, 
+      author={Haibin Wu and Ho-Lam Chung and Yi-Cheng Lin and Yuan-Kuei Wu and Xuanjun Chen and Yu-Chi Pai and Hsiu-Hsuan Wang and Kai-Wei Chang and Alexander H. Liu and Hung-yi Lee},
+      year={2024},
+      eprint={2402.13071},
+      archivePrefix={arXiv},
+      primaryClass={eess.AS}
+}
+```
 ## Contribution
 
 Contributions are highly encouraged, whether it's through adding new codec models, expanding the dataset collection, or
