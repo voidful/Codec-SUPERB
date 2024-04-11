@@ -31,3 +31,31 @@ if [ $stage -eq 1 ]; then
     fi
 
 fi
+
+if [ $stage -eq 2 ]; then
+
+    echo -e "\nStage 2: Run speaker verification." | tee -a $result_log
+    eval "$(conda shell.bash hook)"
+    conda activate ECAPA
+
+    if [ "do" ]; then
+
+        echo "Parsing the trial.txt for resyn wavs"
+        while IFS= read -r line; do
+            IFS=' ' read -r -a array <<< "$line"
+            array[1]="$syn_path/${array[1]}"
+            array[2]="$syn_path/${array[2]}"
+            echo "${array[@]}" >> src/ASV/resyn_trial.txt
+        done < src/ASV/veri_test2.txt
+    fi
+
+    if [ "do" ]; then
+        CUDA_VISIBLE_DEVICES=0 \
+        python src/ASV/trainECAPAModel.py \
+            --eval \
+            --initial_model src/ASV/exps/pretrain.model \
+            --eval_list src/ASV/resyn_trial.txt \
+            2>&1 | tee $result_log
+    fi
+
+fi
