@@ -76,7 +76,7 @@ def Emotion_Eval(
 
     labels = []
     for path in paths2:
-        emotion_code = path.split("/")[-1]
+        emotion_code = path.split("/")[-1].split("-")[0]
         label = emotion_mapping.get(emotion_code, "unknown")
         labels.append(label)
     
