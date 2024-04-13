@@ -1,6 +1,6 @@
 #!/bin/bash
 
-stage=2
+stage=3
 
 # For different stage, set different syn_path and ref_path
 syn_path=/syn/path
@@ -10,7 +10,7 @@ result_log=logs
 mkdir -p exps
 
 echo "Codec SUPERB application evaluation" | tee ${result_log}
-if [ $stage -ge 1 ]; then
+if [ $stage -le 1 ]; then
 
     echo -e "\nStage 1: Run speech emotion recognition." | tee -a $result_log
     source ~/.bashrc
@@ -35,7 +35,7 @@ if [ $stage -ge 1 ]; then
 
 fi
 
-if [ $stage -ge 2 ]; then
+if [ $stage -le 2 ]; then
 
     echo -e "\nStage 2: Run speaker related evaluation." | tee -a $result_log
     source ~/.bashrc
@@ -90,6 +90,32 @@ if [ $stage -ge 2 ]; then
     if [ "do" ]; then
         spk_sim=$(grep -oP 'Similarity \K\d+\.\d+%' $outdir/asv_sim.log)
         echo Speaker similarity: $spk_sim | tee -a $result_log
+    fi
+
+fi
+
+if [ $stage -le 3 ]; then
+
+    echo -e "\nStage 3: Run automatic speech recognition." | tee -a $result_log
+    source ~/.bashrc
+    conda activate whisper
+
+    if [ "do" ]; then
+        CUDA_VISIBLE_DEVICES=0 \
+        python src/ASR/evaluation.py \
+            --syn_path ${syn_path} \
+            2>&1 | tee $outdir/asr.log
+    fi
+
+    if [ "do" ]; then
+        ref_wer=$(grep -oP 'Ref WER: \K\d+\.\d+%' $outdir/asr.log)
+        echo Ref WER: $ref_wer | tee -a $result_log
+        syn_wer=$(grep -oP 'Syn WER: \K\d+\.\d+%' $outdir/asr.log)
+        echo Syn WER: $syn_wer | tee -a $result_log
+        ref_ed=$(grep -oP 'Ref Edit Distance: \K\d+\.\d+' $outdir/asr.log)
+        echo Ref Edit Distance: $ref_ed | tee -a $result_log
+        syn_ed=$(grep -oP 'Syn Edit Distance: \K\d+\.\d+' $outdir/asr.log)
+        echo Syn Edit Distance: $syn_ed | tee -a $result_log
     fi
 
 fi
