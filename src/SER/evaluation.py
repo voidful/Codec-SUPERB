@@ -6,6 +6,19 @@ import os
 from argparse import ArgumentParser
 
 
+emotion_mapping = {
+    'angry': 0,
+    'disgusted': 1,
+    'fearful': 2,
+    'happy': 3,
+    'neutral': 4,
+    'other': 5,
+    'sad': 6,
+    'surprised': 7,
+    'unknown': 8
+}
+
+
 def Emotion_Eval(
     ref_path,
     syn_path,
@@ -59,9 +72,17 @@ def Emotion_Eval(
         ref_preds.append(max_index1)
         gen_preds.append(max_index2)
 
-    accuracy = sum(r == p for r, p in zip(ref_preds, gen_preds)) / len(ref_preds)
+    accuracy_ref = sum(r == p for r, p in zip(ref_preds, gen_preds)) / len(ref_preds)
 
-    return accuracy
+    labels = []
+    for path in paths2:
+        emotion_code = path.split("/")[-1]
+        label = emotion_mapping.get(emotion_code, "unknown")
+        labels.append(label)
+    
+    accuracy_groud_truth = sum(r == p for r, p in zip(labels, gen_preds)) / len(ref_preds)
+
+    return accuracy_ref, accuracy_groud_truth
 
 
 if __name__ == "__main__":
@@ -82,8 +103,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    accuracy = Emotion_Eval(
+    accuracy_ref, accuracy_groud_truth = Emotion_Eval(
         args.ref_path, args.syn_path, device=args.device
     )
 
-    print("Accuracy: ", accuracy)
+    print("Acc_ref_audio %2.2f%%"%(accuracy_ref * 100))
+    print("Acc_ground_truth %2.2f%%"%(accuracy_groud_truth * 100))

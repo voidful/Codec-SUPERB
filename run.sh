@@ -1,53 +1,59 @@
 #!/bin/bash
 
-stage=1
+stage=2
 
+# For different stage, set different syn_path and ref_path
 syn_path=/syn/path
 ref_path=/ref/path
 outdir=exps
 result_log=logs
 mkdir -p exps
 
-echo "Codec SUPERB application evaluation" > ${result_log}
-if [ $stage -eq 1 ]; then
+echo "Codec SUPERB application evaluation" | tee ${result_log}
+if [ $stage -ge 1 ]; then
 
     echo -e "\nStage 1: Run speech emotion recognition." | tee -a $result_log
-    eval "$(conda shell.bash hook)"
+    source ~/.bashrc
     conda activate emo2vec
     model_type='iic/emotion2vec_base_finetuned'
 
     if [ "do" ]; then
-        CUDA_VISIBLE_DEVICES=1 \
+        CUDA_VISIBLE_DEVICES=0 \
         python src/SER/evaluation.py \
             --syn_path ${syn_path} \
             --ref_path ${ref_path} \
             --model_type $model_type \
-            2>&1 | tee $outdir/emo_sim.log
+            2>&1 | tee $outdir/emo.log
     fi
 
     if [ "do" ]; then
-        cat $outdir/emo_sim.log \
-            | perl -e '$sum = 0; while(<>){if(/Accuracy:\s+(\S+)$/){$sum +=$1; $count++;}}; print "Accuracy: ", $sum/$count, "\n";' | tee -a $result_log
+        Acc_ref_audio=$(grep -oP 'Acc_ref_audio \K\d+\.\d+%' $outdir/emo.log)
+        echo Acc_ref_audio: $Acc_ref_audio | tee -a $result_log
+        Acc_ground_truth=$(grep -oP 'Acc_ground_truth \K\d+\.\d+%' $outdir/emo.log)
+        echo Acc_ground_truth: $Acc_ground_truth | tee -a $result_log
     fi
 
 fi
 
-if [ $stage -eq 2 ]; then
+if [ $stage -ge 2 ]; then
 
-    echo -e "\nStage 2: Run speaker verification." | tee -a $result_log
-    eval "$(conda shell.bash hook)"
+    echo -e "\nStage 2: Run speaker related evaluation." | tee -a $result_log
+    source ~/.bashrc
     conda activate ECAPA
 
-    if [ "do" ]; then
+    if [ ! -f "src/ASV/resyn_trial.txt" ]; then
 
-        echo "Parsing the trial.txt for resyn wavs"
+        echo -e "Parsing the resyn_trial.txt for resyn wavs"  | tee -a $result_log
         while IFS= read -r line; do
             IFS=' ' read -r -a array <<< "$line"
             array[1]="$syn_path/${array[1]}"
             array[2]="$syn_path/${array[2]}"
             echo "${array[@]}" >> src/ASV/resyn_trial.txt
         done < src/ASV/veri_test2.txt
+
     fi
+
+    echo -e "\nRun speaker verification." | tee -a $result_log
 
     if [ "do" ]; then
         CUDA_VISIBLE_DEVICES=0 \
@@ -55,7 +61,35 @@ if [ $stage -eq 2 ]; then
             --eval \
             --initial_model src/ASV/exps/pretrain.model \
             --eval_list src/ASV/resyn_trial.txt \
-            2>&1 | tee $result_log
+            2>&1 | tee $outdir/asv.log
+    fi
+
+    if [ "do" ]; then
+        eer=$(grep 'EER' $outdir/asv.log | sed -n 's/.*EER \([^,]*\),.*/\1/p')
+        echo EER: $eer | tee -a $result_log
+    fi
+
+    if [ ! -f "src/ASV/sim_trial.txt" ]; then
+        echo -e "\nGenerate similarity trials." | tee -a $result_log
+        awk -v syn_path="$syn_path" -v ref_path="$ref_path" \
+                '{print syn_path "/" $2, ref_path "/" $2}' src/ASV/veri_test2.txt | \
+                sort -u > src/ASV/sim_trial.txt
+    fi
+
+    echo -e "\nRun speaker similarity evaluation." | tee -a $result_log
+
+    if [ "do" ]; then
+        CUDA_VISIBLE_DEVICES=0 \
+        python src/ASV/trainECAPAModel.py \
+            --eval_sim \
+            --initial_model src/ASV/exps/pretrain.model \
+            --sim_eval_list src/ASV/sim_trial.txt \
+            2>&1 | tee $outdir/asv_sim.log
+    fi
+
+    if [ "do" ]; then
+        spk_sim=$(grep -oP 'Similarity \K\d+\.\d+%' $outdir/asv_sim.log)
+        echo Speaker similarity: $spk_sim | tee -a $result_log
     fi
 
 fi
