@@ -16,6 +16,11 @@
 - cd src/ASV
 - pip install -r requirements.txt
 
+### Data prepare
+- wget https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
+- wget https://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_test_wav.zip
+- mv veri_test2.txt src/ASV
+
 ## 1.3 Application - Automatic speech recognition 
 ### Environment installment
 - conda create -n whisper python=3.8; conda activate whisper
@@ -25,8 +30,3 @@
 - pip install -U openai-whisper
 - pip install jiwer==3.0.3
 - pip install editdistance==0.8.1
-
-### Data prepare
-- wget https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
-- wget https://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_test_wav.zip
-- mv veri_test2.txt src/ASV
