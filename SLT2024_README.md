@@ -44,3 +44,14 @@
 - pip install tqdm==4.66.2
 - pip install transformers==4.39.3
 - pip install torchlibrosa
+
+## Docker
+build docker image
+```shell
+docker build -t slt .
+```
+
+run docker image
+```shell
+docker run -it slt /bin/bash
+```
