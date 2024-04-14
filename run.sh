@@ -119,3 +119,25 @@ if [ $stage -le 3 ]; then
     fi
 
 fi
+
+if [ $stage -le 4 ]; then
+
+    echo -e "\nStage 4: Run audio event classification." | tee -a $result_log
+    source ~/.bashrc
+    conda activate aec_clap
+
+    if [ "do" ]; then
+        CUDA_VISIBLE_DEVICES=0 \
+        python src/AEC/evaluation.py \
+            --syn_path ${syn_path} \
+            2>&1 | tee $outdir/aec.log
+    fi
+
+    if [ "do" ]; then
+        ref_wer=$(grep -oP 'Acc_ground_truth: \K\d+\.\d+%' $outdir/aec.log)
+        echo Ref WER: $ref_wer | tee -a $result_log
+        syn_wer=$(grep -oP 'Acc_resync_audio: \K\d+\.\d+%' $outdir/aec.log)
+        echo Syn WER: $syn_wer | tee -a $result_log
+    fi
+
+fi
