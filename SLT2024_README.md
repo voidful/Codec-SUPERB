@@ -16,6 +16,11 @@
 - cd src/ASV
 - pip install -r requirements.txt
 
+### Data prepare
+- wget https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
+- wget https://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_test_wav.zip
+- mv veri_test2.txt src/ASV
+
 ## 1.3 Application - Automatic speech recognition 
 ### Environment installment
 - conda create -n whisper python=3.8; conda activate whisper
@@ -26,7 +31,7 @@
 - pip install jiwer==3.0.3
 - pip install editdistance==0.8.1
 
-### Data prepare
-- wget https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
-- wget https://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_test_wav.zip
-- mv veri_test2.txt src/ASV
+### Data Structure Guidelines
+- **Directory Placement**: Place your synthesized data within the directory specified by `syn_path`.
+- **File Naming**: Each synthesized data file should be named to match its corresponding original LibriSpeech data file, excluding the file extension.
+- **Directory Structure**: The script is designed to recursively search through subfolders within `syn_path`. You may either replicate the directory structure of the original LibriSpeech dataset, or place all synthesized files directly in `syn_path` without subfolders.
