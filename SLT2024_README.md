@@ -31,11 +31,6 @@
 - pip install jiwer==3.0.3
 - pip install editdistance==0.8.1
 
-### Data Structure Guidelines
-- **Directory Placement**: Place your synthesized data within the directory specified by `syn_path`.
-- **File Naming**: Each synthesized data file should be named to match its corresponding original LibriSpeech data file, excluding the file extension.
-- **Directory Structure**: The script is designed to recursively search through subfolders within `syn_path`. You may either replicate the directory structure of the original LibriSpeech dataset, or place all synthesized files directly in `syn_path` without subfolders.
-
 ## 1.4 Application - Audio Event Classification
 ### Environment installment
 - git clone https://github.com/microsoft/CLAP.git
@@ -49,6 +44,21 @@
 - pip install tqdm==4.66.2
 - pip install transformers==4.39.3
 - pip install torchlibrosa
+
+## 1.5 Codec metric 
+### Environment installment
+- conda create -n codec_metric python=3.8; conda activate codec_metric
+- pip install torch==1.13.1 torchaudio==1.13.1
+- pip install torchvision
+- pip install numpy
+- pip install pandas
+- pip install scikit-learn
+- pip install tqdm
+- pip install transformers
+- pip install torchlibrosa
+- pip install mir_eval
+- pip install soundfile
+- pip install librosa
 
 ## Docker
 build docker image
