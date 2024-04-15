@@ -112,7 +112,7 @@ def AEC_eval(syn_path, # ref_path,
     text_embeddings = clap_model.get_text_embeddings(y)
 
     # Computing audio embeddings
-    y_preds, resyn_y_preds, y_labels = [], [], []
+    y_preds, resyn_y_preds, cos_similarities, y_labels = [], [], [], []
     for i in tqdm(range(len(dataset))):
         x, xr, _, one_hot_target = dataset.__getitem__(i)
         audio_embeddings = clap_model.get_audio_embeddings([x], resample=True)
@@ -120,6 +120,9 @@ def AEC_eval(syn_path, # ref_path,
         
         similarity = clap_model.compute_similarity(audio_embeddings, text_embeddings)
         resyn_similarity = clap_model.compute_similarity(resyn_audio_embeddings, text_embeddings)
+        
+        cos_similarity = F.cosine_similarity(audio_embeddings, resyn_audio_embeddings)
+        # print(f"cos_similarity: {cos_similarity}")
 
         y_pred = F.softmax(similarity.detach().cpu(), dim=1).numpy()
         resyn_y_pred = F.softmax(resyn_similarity.detach().cpu(), dim=1).numpy()
@@ -127,13 +130,19 @@ def AEC_eval(syn_path, # ref_path,
         y_preds.append(y_pred)
         resyn_y_preds.append(resyn_y_pred)
         y_labels.append(one_hot_target.detach().cpu().numpy())
+        cos_similarities.append(cos_similarity.detach().cpu())
 
+    y_labels, y_preds, resyn_y_preds, cos_similarities = np.concatenate(y_labels, axis=0), \
+                                                        np.concatenate(y_preds, axis=0), \
+                                                        np.concatenate(resyn_y_preds, axis=0), \
+                                                        np.concatenate(cos_similarities, axis=0)
+    
+    cos_similarities = np.mean(cos_similarities)
 
-    y_labels, y_preds, resyn_y_preds = np.concatenate(y_labels, axis=0), np.concatenate(y_preds, axis=0), np.concatenate(resyn_y_preds, axis=0)
     accuracy_groud_truth = accuracy_score(np.argmax(y_labels, axis=1), np.argmax(y_preds, axis=1))
     accuracy_resync = accuracy_score(np.argmax(y_labels, axis=1), np.argmax(resyn_y_preds, axis=1))
 
-    return accuracy_groud_truth, accuracy_resync
+    return accuracy_groud_truth, accuracy_resync, cos_similarities
 
 if __name__=="__main__":
     parser = ArgumentParser(description="Audio Event Classification")
@@ -150,7 +159,8 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    accuracy_groud_truth, accuracy_resync = AEC_eval(args.syn_path)
+    accuracy_groud_truth, accuracy_resync, cos_similarities = AEC_eval(args.syn_path)
 
     print(f"Acc_ground_truth: {accuracy_groud_truth * 100:.2f}%")
     print(f"Acc_resync_audio: {accuracy_resync * 100:.2f}%")
+    print(f"Cos_similarity: {cos_similarities * 100:.2f}%")
