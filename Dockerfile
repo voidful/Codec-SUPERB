@@ -54,3 +54,9 @@ RUN pip install torchlibrosa
 # Signal
 WORKDIR /workspace/Codec-SUPERB
 RUN pip install -r requirements.txt
+# Install VisQOL
+RUN apt-get install -y bazel git
+RUN git clone https://github.com/google/visqol.git /workspace/visqol
+WORKDIR /workspace/visqol
+RUN bazel build :visqol -c opt
+RUN pip install .
