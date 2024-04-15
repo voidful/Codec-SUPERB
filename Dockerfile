@@ -55,7 +55,12 @@ RUN pip install torchlibrosa
 WORKDIR /workspace/Codec-SUPERB
 RUN pip install -r requirements.txt
 # Install VisQOL
-RUN apt-get install -y bazel git
+# Install Bazel for building ViSQOL
+RUN apt-get install -y apt-transport-https curl gnupg
+RUN curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor >bazel-archive-keyring.gpg
+RUN mv bazel-archive-keyring.gpg /usr/share/keyrings
+RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gpg] https://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list
+RUN apt-get update && apt-get install -y bazel
 RUN git clone https://github.com/google/visqol.git /workspace/visqol
 WORKDIR /workspace/visqol
 RUN bazel build :visqol -c opt
