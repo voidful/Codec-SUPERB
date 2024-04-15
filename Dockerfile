@@ -63,5 +63,7 @@ RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gp
 RUN apt-get update && apt-get install -y bazel-5.3.2
 RUN git clone https://github.com/google/visqol.git /workspace/visqol
 WORKDIR /workspace/visqol
-RUN bazel build :visqol -c opt
+RUN /usr/bin/bazel-5.3.2 build :visqol -c opt
 RUN pip install .
+#
+WORKDIR /workspace/Codec-SUPERB
