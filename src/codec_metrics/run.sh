@@ -1,16 +1,18 @@
 #!/bin/bash
-cd src/codec_metrics
-wget -nc https://huggingface.co/Dongchao/pre_trained_model/resolve/main/visqol.zip
-unzip -n visqol.zip
-category=$1
-# For different stage, set different syn_path and ref_path
-syn_path=/home/ycevan/AudioDecBenchmark/sample_100/sample_100/audioset
-ref_path=/home/ycevan/AudioDecBenchmark/sample_100/sample_100/audioset
-outdir=exps
-result_log=logs
-mkdir -p exps
-conda activate codec_metric
-echo "Codec SUPERB application evaluation" | tee ${result_log}
+
+category=$1 # speech / audio
+dataset=$2 # librispeech ... / esc50 ...
+
+source activate codec_metric
+syn_path=/syn/path/samples/${dataset}
+ref_path=/ref/path/samples/${dataset}
+syn_path=/home/nvcenter/hbwu/data/samples/${dataset}
+ref_path=/home/nvcenter/hbwu/data/samples/${dataset}
+outdir=exps/logs/${dataset}
+mkdir -p $outdir
+result_log=exps/${dataset}.log
+
+echo "Codec SUPERB objective metric evaluation on ${dataset}" | tee ${result_log}
 
 if [ "$category" = "speech" ]; then
     stage=1
@@ -30,7 +32,12 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
         --syn_path ${syn_path} \
         --ref_path ${ref_path} \
         --metric_name $model_type \
-        2>&1 | tee $outdir/SDR.log
+        2>&1 | tee $outdir/${model_type}.log
+
+    if [ "do" ]; then
+        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        echo $model_type: $value | tee -a $result_log
+    fi
 
 fi
 
@@ -42,7 +49,12 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
         --syn_path ${syn_path} \
         --ref_path ${ref_path} \
         --metric_name $model_type \
-        2>&1 | tee $outdir/stft_distance.log
+        2>&1 | tee $outdir/${model_type}.log
+
+    if [ "do" ]; then
+        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        echo $model_type: $value | tee -a $result_log
+    fi
 
 fi
 
@@ -55,7 +67,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
         --ref_path ${ref_path} \
         --metric_name $model_type \
         --target_sr $visqol_sr \
-        2>&1 | tee $outdir/VISQOL.log
+        2>&1 | tee $outdir/${model_type}.log
+
+    if [ "do" ]; then
+        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        echo $model_type: $value | tee -a $result_log
+    fi
 
 fi
 
@@ -67,7 +84,12 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
         --syn_path ${syn_path} \
         --ref_path ${ref_path} \
         --metric_name $model_type \
-        2>&1 | tee $outdir/Mel_loss.log
+        2>&1 | tee $outdir/${model_type}.log
+
+    if [ "do" ]; then
+        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        echo $model_type: $value | tee -a $result_log
+    fi
 
 fi
 
@@ -79,7 +101,12 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
         --syn_path ${syn_path} \
         --ref_path ${ref_path} \
         --metric_name $model_type \
-        2>&1 | tee $outdir/STOI.log
+        2>&1 | tee $outdir/${model_type}.log
+
+    if [ "do" ]; then
+        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        echo $model_type: $value | tee -a $result_log
+    fi
 
 fi
 
@@ -92,6 +119,11 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
         --ref_path ${ref_path} \
         --metric_name $model_type \
         --target_sr 16000 \
-        2>&1 | tee $outdir/PESQ.log
+        2>&1 | tee $outdir/${model_type}.log
+
+    if [ "do" ]; then
+        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        echo $model_type: $value | tee -a $result_log
+    fi
 
 fi
