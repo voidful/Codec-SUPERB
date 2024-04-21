@@ -36,7 +36,6 @@ def Mel_loss(ref_folder,
     Returns:
         dict: A dictionary containing the STFT distances for each pair of audio files, with file names as keys.
     """
-    # 获取所有参考音频和生成音频的路径
     ref_files = sorted(glob.glob(os.path.join(ref_folder, '*.wav')))
     est_files = sorted(glob.glob(os.path.join(est_folder, '*.wav')))
     
@@ -46,18 +45,15 @@ def Mel_loss(ref_folder,
     mel_losses = {}
     mean_score = []
     for ref_path, est_path in zip(ref_files, est_files):
-        # 读取音频文件
         ref_audio, ref_rate = sf.read(ref_path)
         est_audio, est_rate = sf.read(est_path)
         
-        # 如果指定了目标采样率，进行重采样
         if target_sr is not None:
             if ref_rate != target_sr:
                 ref_audio = librosa.resample(ref_audio, orig_sr=ref_rate, target_sr=target_sr)
             if est_rate != target_sr:
                 est_audio = librosa.resample(est_audio, orig_sr=est_rate, target_sr=target_sr)
         
-        # 确保音频是单通道
         if ref_audio.ndim > 1:
             ref_audio = ref_audio[:, 0]
         if est_audio.ndim > 1:
@@ -66,7 +62,6 @@ def Mel_loss(ref_folder,
         ref_signal = AudioSignal(ref_audio, target_sr if target_sr is not None else ref_rate)
         est_signal = AudioSignal(est_audio, target_sr if target_sr is not None else est_rate)
         
-        # 计算 Mel Loss
         loss = 0.0
         for n_mel, fmin, fmax, wlen in zip(
                 n_mels, mel_fmin, mel_fmax, window_lengths
@@ -86,7 +81,6 @@ def Mel_loss(ref_folder,
             loss += mag_weight * loss_fn(x_mels, y_mels)
         
         mean_score.append(loss)
-        # 存储距离
         mel_losses[os.path.basename(ref_path)] = loss
     
     return mel_losses, np.mean(mean_score)

@@ -20,14 +20,14 @@ class LibriSpeech(torch.utils.data.Dataset):
     Dataset class to wrap LibriSpeech and trim/pad the audio to a fixed duration, here aiming for 30 seconds.
     Drops the last few seconds if the utterance is slightly longer than 30 seconds.
     """
-    def __init__(self, syn_path, n_mels, device=DEVICE):
+    def __init__(self, syn_path, ref_path, n_mels, device=DEVICE):
         # Initialize datasets for both 'test-clean' and 'test-other'
         datasets = []
         for split in ["test-clean", "test-other"]:
             datasets.append(torchaudio.datasets.LIBRISPEECH(
-                root=os.path.expanduser("~/.cache"),
+                root=ref_path,
                 url=split,
-                download=True,
+                download=False,
             ))
         self.concat_dataset = torch.utils.data.ConcatDataset(datasets)
 
@@ -64,13 +64,13 @@ class LibriSpeech(torch.utils.data.Dataset):
         return ref_mel, syn_mel, text
 
 
-def ASR_Eval(syn_path):
+def ASR_Eval(syn_path, ref_path, whisper_type):
     # Initialize Whisper model
-    model = whisper.load_model("large")
+    model = whisper.load_model(whisper_type)
     options = whisper.DecodingOptions(language="en", without_timestamps=True)
     normalizer = EnglishTextNormalizer()
 
-    dataset = LibriSpeech(syn_path, model.dims.n_mels)
+    dataset = LibriSpeech(syn_path=syn_path, ref_path=ref_path, n_mels=model.dims.n_mels)
     loader = torch.utils.data.DataLoader(dataset, batch_size=2)
 
     ref_hypotheses, syn_hypotheses, references = [], [], []
@@ -113,7 +113,9 @@ def ASR_Eval(syn_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run automatic speech recognition experiments.')
+    parser.add_argument('--whisper_type', type=str, default="base")
     parser.add_argument('--syn_path', type=str, help='Directory containing synetic audio files')
+    parser.add_argument('--ref_path', type=str, help='Directory containing reference audio files')
     args = parser.parse_args()
-    ASR_Eval(args.syn_path)
+    ASR_Eval(syn_path=args.syn_path, ref_path=args.ref_path, whisper_type=args.whisper_type)
 

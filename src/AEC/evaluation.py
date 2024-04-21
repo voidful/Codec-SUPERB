@@ -16,7 +16,7 @@ from CLAP.msclap import CLAP
 
 
 class AudioDataset(Dataset):
-    def __init__(self, root: str, download: bool = True):
+    def __init__(self, root: str, download: bool = False):
         self.root = os.path.expanduser(root)
         if download:
             self.download()
@@ -42,7 +42,7 @@ class ESC50(AudioDataset):
         'filename': os.path.join('meta','esc50.csv'),
     }
 
-    def __init__(self, root, resyn_path, reading_transformations: nn.Module = None, download: bool = True):
+    def __init__(self, root, resyn_path, reading_transformations: nn.Module = None, download: bool = False):
         super().__init__(root)
         self._load_meta()
 
@@ -53,14 +53,14 @@ class ESC50(AudioDataset):
         self.df['category'] = self.df['category'].str.replace('_',' ')
 
         for _, row in tqdm(self.df.iterrows()):
-            file_path = os.path.join(self.root, self.base_folder, self.audio_dir, row[self.file_col])
-            resyn_path = os.path.join(self.resyn_path, row[self.file_col])
+            file_path = os.path.join(self.root, self.audio_dir, row[self.file_col])
+            resyn_path = os.path.join(self.resyn_path, self.audio_dir, row[self.file_col])
             self.targets.append(row[self.label_col])
             self.audio_paths.append(file_path)
             self.resyn_audio_path.append(resyn_path)
 
     def _load_meta(self):
-        path = os.path.join(self.root, self.base_folder, self.meta['filename'])
+        path = os.path.join(self.root, self.meta['filename'])
 
         self.df = pd.read_csv(path)
         self.class_to_idx = {}
@@ -91,17 +91,20 @@ class ESC50(AudioDataset):
         with ZipFile(os.path.join(self.root, self.filename), 'r') as zip:
             zip.extractall(path=self.root)
 
-def AEC_eval(syn_path, # ref_path,
-            model_type="2023",
+def AEC_eval(
+    ref_path,
+    syn_path,
+    model_type="2023",
 ):
     """
     Args:
+        root_path (str): Path to original audio files.
         syn_path (str): Path to the synthesis audio files.
         model_type (str): Which model to use, 2022 or 2023.
     """
     # Load dataset
-    root_path = "CLAP/examples/root_path" # Folder with ESC-50-master/
-    dataset = ESC50(root=root_path, resyn_path=syn_path, download=True) #If download=False code assumes base_folder='ESC-50-master' in esc50_dataset.py
+    root_path = ref_path # Folder with ESC-50/
+    dataset = ESC50(root=root_path, resyn_path=syn_path, download=False) #If download=False code assumes base_folder='ESC-50-master' in esc50_dataset.py
     prompt = 'this is the sound of '
     y = [prompt + x for x in dataset.classes]
 
@@ -147,9 +150,14 @@ def AEC_eval(syn_path, # ref_path,
 if __name__=="__main__":
     parser = ArgumentParser(description="Audio Event Classification")
     parser.add_argument(
-        "--syn_path",
-        default="/mnt/sda/codec-superb-slt/CLAP/examples/root_path/ESC-50-master/audio/",
+        "--ref_path",
+        default="/ref/path/ESC-50",
         help="path to the generate data"
+    )
+    parser.add_argument(
+        "--syn_path",
+        default="/syn/path/ESC-50",
+        help="path to the resynthesised data"
     )
     parser.add_argument(
         "--model_type",
@@ -159,7 +167,10 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    accuracy_groud_truth, accuracy_resync, cos_similarities = AEC_eval(args.syn_path)
+    accuracy_groud_truth, accuracy_resync, cos_similarities = AEC_eval(
+                                                                        syn_path=args.syn_path,
+                                                                        ref_path=args.ref_path
+                                                                    )
 
     print(f"Acc_ground_truth: {accuracy_groud_truth * 100:.2f}%")
     print(f"Acc_resync_audio: {accuracy_resync * 100:.2f}%")

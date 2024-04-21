@@ -1,6 +1,6 @@
 import os
 import argparse
-from sdr2 import SDR_cal
+from sdr import SDR_cal
 from stft_dis import STFT_distance
 from visqol import visqol_audio
 from mel_loss import Mel_loss
@@ -36,7 +36,7 @@ def Codec_Eval(syn_path, ref_path, metric_name, target_sr=16000):
     else:
         print('error metric name, please check! metric_name should be [SDR, stft_dis, visqol, mel_loss, pesq, stoi]')
         assert 1==2
-    print(f'{metric_name} mean score is: ', ans)
+    print(f'{metric_name} mean score is:', ans)
     return ans
 
 

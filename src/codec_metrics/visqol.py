@@ -33,13 +33,11 @@ def visqol_audio(ref_folder, est_folder, sr=16000):
         ref_audio, ref_rate = sf.read(ref_path)
         est_audio, est_rate = sf.read(est_path)
         
-        # 如果指定了目标采样率，进行重采样
         if sr is not None:
             if ref_rate != sr:
                 ref_audio = librosa.resample(ref_audio, orig_sr=ref_rate, target_sr=sr)
             if est_rate != sr:
                 est_audio = librosa.resample(est_audio, orig_sr=est_rate, target_sr=sr)
-        # 确保音频是单通道
         if ref_audio.ndim > 1:
             ref_audio = ref_audio[:, 0]
         if est_audio.ndim > 1:
@@ -59,7 +57,6 @@ def visqol_audio(ref_folder, est_folder, sr=16000):
                 outs.append(out.moslqo)
         visqol_scores[os.path.basename(ref_path)] = np.mean(outs)
         mean_score.append(np.mean(outs))
-    # return torch.Tensor([np.mean(outs)]).to(ests.device)
 
     return visqol_scores, np.mean(mean_score)
 

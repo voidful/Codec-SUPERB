@@ -18,7 +18,6 @@ def stoi_folder(ref_folder, est_folder):
     Returns:
         dict: A dictionary containing the STOI for each pair of audio files, with file names as keys.
     """
-    # 获取所有参考音频和生成音频的路径
     ref_files = sorted(glob.glob(os.path.join(ref_folder, '*.wav')))
     est_files = sorted(glob.glob(os.path.join(est_folder, '*.wav')))
     
@@ -28,22 +27,18 @@ def stoi_folder(ref_folder, est_folder):
     stoi_score = {}
     mean_score = []
     for ref_path, est_path in zip(ref_files, est_files):
-        # 读取音频文件
         ref_audio, ref_rate = sf.read(ref_path)
         est_audio, est_rate = sf.read(est_path)
-        
-        # 确保音频是单通道
+
         if ref_audio.ndim > 1:
             ref_audio = ref_audio[:, 0]
         if est_audio.ndim > 1:
             est_audio = est_audio[:, 0]
-        score = stoi(ref_audio, est_audio, 10000)
+        score = stoi(ref_audio, est_audio, ref_rate)
         mean_score.append(score)
         stoi_score[os.path.basename(ref_path)] = score
     
     return stoi_score, np.mean(mean_score)
-        
-
 
 
 def stoi(x, y, fs_signal):
