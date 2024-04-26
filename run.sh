@@ -5,7 +5,7 @@ stage=4
 syn_path=/syn/path
 ref_path=/ref/path
 outdir=exps
-result_log=$outdir/results.log
+result_log=$outdir/results.txt
 mkdir -p ${outdir}/logs
 
 if [ ! -f ${result_log} ]; then
@@ -14,8 +14,6 @@ fi
 
 if [ $stage -eq 1 ]; then
 
-    source ~/.bashrc
-    source activate emo2vec
     echo -e "\nStage 1: Run speech emotion recognition." | tee -a $result_log
     model_type='iic/emotion2vec_base_finetuned'
 
@@ -37,9 +35,10 @@ fi
 
 if [ $stage -eq 2 ]; then
 
-    source activate ECAPA
     echo -e "\nStage 2: Run speaker related evaluation." | tee -a $result_log
-    wget -P src/ASV https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
+    if [ ! -f "src/ASV/veri_test2.txt" ]; then
+        wget -P src/ASV https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
+    fi
 
     if [ ! -f "src/ASV/resyn_trial.txt" ]; then
 
@@ -73,7 +72,6 @@ fi
 
 if [ $stage -eq 3 ]; then
 
-    source activate whisper
     echo -e "\nStage 3: Run automatic speech recognition." | tee -a $result_log
 
     if [ "do" ]; then
@@ -99,7 +97,6 @@ fi
 
 if [ $stage -eq 4 ]; then
 
-    source activate aec_clap
     echo -e "\nStage 4: Run audio event classification." | tee -a $result_log
 
     if [ "do" ]; then
