@@ -113,7 +113,7 @@ def ASR_Eval(syn_path, ref_path, whisper_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run automatic speech recognition experiments.')
-    parser.add_argument('--whisper_type', type=str, default="base")
+    parser.add_argument('--whisper_type', type=str, default="large")
     parser.add_argument('--syn_path', type=str, help='Directory containing synetic audio files')
     parser.add_argument('--ref_path', type=str, help='Directory containing reference audio files')
     args = parser.parse_args()
