@@ -27,11 +27,6 @@ After `unzip` the `codec_superb_data.zip`, you can obtain following files:
 │   ├── audio
 │   └── meta
 ├── LibriSpeech
-│   ├── BOOKS.TXT
-│   ├── CHAPTERS.TXT
-│   ├── LICENSE.TXT
-│   ├── README.TXT
-│   ├── SPEAKERS.TXT
 │   ├── test-clean
 │   └── test-other
 ├── RAVDESS
