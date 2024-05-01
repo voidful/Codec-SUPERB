@@ -48,6 +48,10 @@ def Mel_loss(ref_folder,
         ref_audio, ref_rate = sf.read(ref_path)
         est_audio, est_rate = sf.read(est_path)
         
+        min_len = min(ref_audio.shape[0], est_audio.shape[0])
+        ref_audio = ref_audio[:min_len]
+        est_audio = est_audio[:min_len]
+        
         if target_sr is not None:
             if ref_rate != target_sr:
                 ref_audio = librosa.resample(ref_audio, orig_sr=ref_rate, target_sr=target_sr)

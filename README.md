@@ -11,13 +11,10 @@ conda activate codec-superb
 pip install --no-dependencies -r requirements.txt
 git clone https://github.com/microsoft/CLAP.git src/AEC/CLAP
 git clone https://github.com/hbwu-ntu/ECAPA-TDNN.git src/ASV
-wget -P src/codec_metrics -nc https://huggingface.co/Dongchao/pre_trained_model/resolve/main/visqol.zip
-unzip -n src/codec_metrics/visqol.zip -d src/codec_metrics
 ```
 
 ## 2. Data download
 ```shell
-pip install gdown
 gdown 1V_uHK7JO2_o7S41KS69fI-pTCKndP3UJ
 ```
 After `unzip` the `codec_superb_data.zip`, you can obtain following files:
@@ -71,7 +68,7 @@ bash run.sh audio esc50
 
 ## 4. Results submission
 - Open an issue.
-- Copy results in `exps/results.txt` and `src/codec_metrics/exps/results.txt`, and paste them in the issue.
+- Copy results in `exps/results.txt` and `src/codec_metrics/exps/results.txt`, and paste them in the issue. In the meantime, which bitrate is adopted for evaluation should be stated in the issue.
 
 ## Citation
 If you find this codebase useful, please cite our work as:
