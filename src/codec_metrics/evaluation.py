@@ -2,7 +2,6 @@ import os
 import argparse
 from sdr import SDR_cal
 from stft_dis import STFT_distance
-from visqol import visqol_audio
 from mel_loss import Mel_loss
 from pesq_local import pesq_folder
 from stoi import stoi_folder
@@ -17,10 +16,6 @@ def Codec_Eval(syn_path, ref_path, metric_name, target_sr=16000):
         stft_scores, ans = STFT_distance(ref_path, syn_path, target_sr)
         for file, score in stft_scores.items():
             print(f"STFT for {file}: {score:.2f}")
-    elif metric_name == 'visqol':
-        visqol_scores, ans = visqol_audio(ref_path, syn_path, int(target_sr))
-        for file, score in visqol_scores.items():
-            print(f"visqol for {file}: {score:.2f}")
     elif metric_name == 'mel_loss':
         mel_losses, ans = Mel_loss(ref_path, syn_path, target_sr)
         for file, score in mel_losses.items():
