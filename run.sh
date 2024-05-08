@@ -40,17 +40,18 @@ if [ $stage -eq 2 ]; then
         wget -P src/ASV https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test2.txt
     fi
 
-    if [ ! -f "src/ASV/resyn_trial.txt" ]; then
-
-        echo -e "Parsing the resyn_trial.txt for resyn wavs"  | tee -a $result_log
-        while IFS= read -r line; do
-            IFS=' ' read -r -a array <<< "$line"
-            array[1]="$syn_path/vox1_test_wav/wav/${array[1]}"
-            array[2]="$syn_path/vox1_test_wav/wav/${array[2]}"
-            echo "${array[@]}" >> src/ASV/resyn_trial.txt
-        done < src/ASV/veri_test2.txt
-
+    # Check if resyn_trial.txt exists
+    if [ -f "src/ASV/resyn_trial.txt" ]; then
+        # If it exists, remove it
+        rm "src/ASV/resyn_trial.txt"
     fi
+    echo -e "Parsing the resyn_trial.txt for resyn wavs" | tee -a "$result_log"
+    while IFS= read -r line; do
+        IFS=' ' read -r -a array <<< "$line"
+        array[1]="$syn_path/vox1_test_wav/wav/${array[1]}"
+        array[2]="$syn_path/vox1_test_wav/wav/${array[2]}"
+        echo "${array[@]}" >> "src/ASV/resyn_trial.txt"
+    done < "src/ASV/veri_test2.txt"
 
     echo -e "\nRun speaker verification." | tee -a $result_log
 
