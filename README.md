@@ -93,6 +93,14 @@ If you use this code or result in your paper, please cite our work as:
       primaryClass={eess.AS}
 }
 ```
+```Tex
+@article{wu2024towards,
+  title={Towards audio language modeling-an overview},
+  author={Wu, Haibin and Chen, Xuanjun and Lin, Yi-Cheng and Chang, Kai-wei and Chung, Ho-Lam and Liu, Alexander H and Lee, Hung-yi},
+  journal={arXiv preprint arXiv:2402.13236},
+  year={2024}
+}
+```
 ## Contribution
 
 Contributions are highly encouraged, whether it's through adding new codec models, expanding the dataset collection, or
