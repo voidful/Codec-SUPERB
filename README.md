@@ -19,7 +19,7 @@ gdown 1V_uHK7JO2_o7S41KS69fI-pTCKndP3UJ
 ```
 After `unzip` the `codec_superb_data.zip`, you can obtain following files:
 ```
-.
+ref_path
 ├── ESC-50-master
 │   ├── audio
 │   └── meta
@@ -44,7 +44,7 @@ After `unzip` the `codec_superb_data.zip`, you can obtain following files:
 └── vox1_test_wav
     └── wav
 ```
-The resynthesised audio files, should follow the same structure for evaluation (`run.sh` for applications and `src/codec_metrics/run.sh` for objective metrics).
+The resynthesised audio files, should follow the same structure as `ref_path` and are stored in `syn_path` for evaluation (`run.sh` for applications and `src/codec_metrics/run.sh` for objective metrics).
 
 ## 3. Usage
 ### 3.1 Application
