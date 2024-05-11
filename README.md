@@ -63,7 +63,7 @@ bash run.sh audio esc50
 
 ## 4. Results submission
 - Open an issue.
-- Copy results in `exps/results.txt` and `src/codec_metrics/exps/results.txt`, and paste them in the issue. In the meantime, which bitrate is adopted for evaluation should be stated in the issue.
+- Copy results in `exps/results.txt` and `src/codec_metrics/exps/results.txt`, and paste them in the issue. In the meantime, which **bitrate** is adopted for evaluation, the **parameter number** of the codec model should be stated in the issue.
 
 ## Citation
 If you find this codebase useful, please cite our work as:
