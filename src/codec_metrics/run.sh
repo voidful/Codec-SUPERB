@@ -88,20 +88,3 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
     fi
 
 fi
-
-if [ do ]; then
-
-    result_log="exps/results.txt"
-    echo "Log results" > $result_log
-    echo "--------------------------------------------------" >> $result_log
-
-    for log_file in exps/*.log; do
-
-        filename=$(basename "$log_file")
-        echo "File Name: $filename" >> $result_log
-        cat "$log_file" >> $result_log
-        echo "--------------------------------------------------" >> $result_log
-
-    done
-
-fi

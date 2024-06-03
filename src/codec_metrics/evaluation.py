@@ -1,10 +1,9 @@
 import os
 import argparse
-from sdr import SDR_cal
-from stft_dis import STFT_distance
-from mel_loss import Mel_loss
-from pesq_local import pesq_folder
-from stoi import stoi_folder
+from utils.sdr import SDR_cal
+from utils.mel_loss import Mel_loss
+from utils.pesq_local import pesq_folder
+from utils.stoi import stoi_folder
 
 
 def Codec_Eval(syn_path, ref_path, metric_name, target_sr=16000):
@@ -12,10 +11,6 @@ def Codec_Eval(syn_path, ref_path, metric_name, target_sr=16000):
         SDR_scores, ans = SDR_cal(ref_path, syn_path, target_sr)
         for file, score in SDR_scores.items():
             print(f"SDR for {file}: {score:.2f} dB")
-    elif metric_name == 'stft_dis':
-        stft_scores, ans = STFT_distance(ref_path, syn_path, target_sr)
-        for file, score in stft_scores.items():
-            print(f"STFT for {file}: {score:.2f}")
     elif metric_name == 'mel_loss':
         mel_losses, ans = Mel_loss(ref_path, syn_path, target_sr)
         for file, score in mel_losses.items():
