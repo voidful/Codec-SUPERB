@@ -57,8 +57,7 @@ bash run.sh
 The script `src/codec_metrics/run.sh` can be leveraged to evaluate objective metrics. You should change `syn_path` and `ref_path` in `src/codec_metrics/run.sh`.
 ```shell
 cd src/codec_metrics
-bash run.sh speech librispeech
-bash run.sh audio esc50
+bash run_wrapper.sh
 ```
 
 ## 4. Results submission
