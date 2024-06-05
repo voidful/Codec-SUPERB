@@ -30,6 +30,9 @@ def stoi_folder(ref_folder, est_folder):
         ref_audio, ref_rate = sf.read(ref_path)
         est_audio, est_rate = sf.read(est_path)
         
+        if est_rate != ref_rate:
+            est_audio = librosa.resample(est_audio, orig_sr=est_rate, target_sr=ref_rate)
+        
         min_len = min(ref_audio.shape[0], est_audio.shape[0])
         ref_audio = ref_audio[:min_len]
         est_audio = est_audio[:min_len]

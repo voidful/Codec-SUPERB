@@ -30,12 +30,9 @@ def SDR_cal(ref_folder, est_folder, target_sr=None):
     for ref_path, est_path in zip(ref_files, est_files):
         ref_audio, ref_rate = sf.read(ref_path)
         est_audio, est_rate = sf.read(est_path)
-
-        if target_sr is not None:
-            if ref_rate != target_sr:
-                ref_audio = librosa.resample(ref_audio, orig_sr=ref_rate, target_sr=target_sr)
-            if est_rate != target_sr:
-                est_audio = librosa.resample(est_audio, orig_sr=est_rate, target_sr=target_sr)
+        
+        if est_rate != ref_rate:
+            est_audio = librosa.resample(est_audio, orig_sr=est_rate, target_sr=ref_rate)
 
         if ref_audio.ndim > 1:
             ref_audio = ref_audio[:, 0]
