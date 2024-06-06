@@ -28,7 +28,7 @@ if [ $stage -eq 1 ]; then
 
     if [ "do" ]; then
         Acc_ground_truth=$(grep -oP 'Acc_ground_truth \K\d+\.\d+%' ${outdir}/logs/emo.log)
-        echo Acc_ground_truth: $Acc_ground_truth | tee -a $result_log
+        echo Acc: $Acc_ground_truth | tee -a $result_log
     fi
 
 fi
@@ -84,14 +84,8 @@ if [ $stage -eq 3 ]; then
     fi
 
     if [ "do" ]; then
-        ref_wer=$(grep -oP 'Ref WER: \K\d+\.\d+%' ${outdir}/logs/asr.log)
-        echo Ref WER: $ref_wer | tee -a $result_log
         syn_wer=$(grep -oP 'Syn WER: \K\d+\.\d+%' ${outdir}/logs/asr.log)
-        echo Syn WER: $syn_wer | tee -a $result_log
-        ref_ed=$(grep -oP 'Ref Edit Distance: \K\d+\.\d+' ${outdir}/logs/asr.log)
-        echo Ref Edit Distance: $ref_ed | tee -a $result_log
-        syn_ed=$(grep -oP 'Syn Edit Distance: \K\d+\.\d+' ${outdir}/logs/asr.log)
-        echo Syn Edit Distance: $syn_ed | tee -a $result_log
+        echo WER: $syn_wer | tee -a $result_log
     fi
 
 fi
@@ -109,12 +103,8 @@ if [ $stage -eq 4 ]; then
     fi
 
     if [ "do" ]; then
-        ref_acc=$(grep -oP 'Acc_ground_truth: \K\d+\.\d+%' ${outdir}/logs/aec.log)
-        echo Ref ACC: $ref_acc | tee -a $result_log
         syn_acc=$(grep -oP 'Acc_resync_audio: \K\d+\.\d+%' ${outdir}/logs/aec.log)
-        echo Syn ACC: $syn_acc | tee -a $result_log
-        syn_cos=$(grep -oP 'Cos_similarity: \K\d+\.\d+%' ${outdir}/logs/aec.log)
-        echo Syn COS: $syn_cos | tee -a $result_log
+        echo ACC: $syn_acc | tee -a $result_log
     fi
 
 fi

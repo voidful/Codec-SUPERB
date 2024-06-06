@@ -27,7 +27,7 @@ if [ do ]; then
     done
 
     if [ do ]; then
-        python utils/log_overall_score.py --log_dir exps
+        python utils/log_overall_score.py --log_dir exps | tee -a $result_log
     fi
 
 fi
