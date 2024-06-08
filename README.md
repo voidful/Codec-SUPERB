@@ -4,6 +4,9 @@ Codec-SUPERB challenge @ SLT 2024, aims to enable a fair comparison of all curre
 
 <a href='https://codecsuperb.github.io/'><img src='https://img.shields.io/badge/Project-Page-Green'></a>  <a href='https://arxiv.org/abs/2402.13071'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
 
+**[June 2024 Update]** We now provide an example evaluation using the DAC model: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1tVZ_oe_eeRdsclAHTa72leUcIoycpMsa?usp=sharing)
+
+
 ## 1. Environment installation
 ```shell
 conda create -n codec-superb python=3.8
