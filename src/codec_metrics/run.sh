@@ -30,7 +30,7 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
         2>&1 | tee $outdir/${model_type}.log
 
     if [ "do" ]; then
-        value=$(grep -o 'mean score is: [0-9.]*' $outdir/${model_type}.log)
+        value=$(grep -o 'mean score is: -*[0-9]\+[.0-9]*' $outdir/${model_type}.log)
         echo $model_type: $value | tee -a $result_log
     fi
 
