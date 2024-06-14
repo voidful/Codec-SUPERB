@@ -34,7 +34,7 @@ audio_data = {
 
 # Regular expression patterns
 dataset_pattern = re.compile(r'Codec SUPERB objective metric evaluation on (\w+)')
-sdr_pattern = re.compile(r'SDR: mean score is: ([\d.]+)')
+sdr_pattern = re.compile(r'SDR: mean score is: (-?[\d.]+)')
 mel_loss_pattern = re.compile(r'mel_loss: mean score is: ([\d.]+)')
 stoi_pattern = re.compile(r'stoi: mean score is: ([\d.]+)')
 pesq_pattern = re.compile(r'pesq: mean score is: ([\d.]+)')
