@@ -1,4 +1,4 @@
-# Codec-SUPERB @ SLT 2024: Sound Codec Speech Processing Universal Performance Benchmark
+# Codec-SUPERB @ SLT 2024: Codec Speech Processing Universal Performance Benchmark
 
 Codec-SUPERB challenge @ SLT 2024, aims to enable a fair comparison of all current codec models and stimulate the development of more advanced codec models. 
 
