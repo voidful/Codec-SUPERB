@@ -1,0 +1,4 @@
+datasets
+transformers
+huggingface_hub
+accelerate
