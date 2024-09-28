@@ -84,13 +84,11 @@ decoded_waveform = encodec_24k_6bps.synth(sound_unit, local_save=False)['audio']
 ## Citation
 If you use this code or result in your paper, please cite our work as:
 ```Tex
-@misc{wu2024codecsuperb,
-      title={Codec-SUPERB: An In-Depth Analysis of Sound Codec Models}, 
-      author={Haibin Wu and Ho-Lam Chung and Yi-Cheng Lin and Yuan-Kuei Wu and Xuanjun Chen and Yu-Chi Pai and Hsiu-Hsuan Wang and Kai-Wei Chang and Alexander H. Liu and Hung-yi Lee},
-      year={2024},
-      eprint={2402.13071},
-      archivePrefix={arXiv},
-      primaryClass={eess.AS}
+@article{wu2024codec,
+  title={Codec-superb: An in-depth analysis of sound codec models},
+  author={Wu, Haibin and Chung, Ho-Lam and Lin, Yi-Cheng and Wu, Yuan-Kuei and Chen, Xuanjun and Pai, Yu-Chi and Wang, Hsiu-Hsuan and Chang, Kai-Wei and Liu, Alexander H and Lee, Hung-yi},
+  journal={arXiv preprint arXiv:2402.13071},
+  year={2024}
 }
 ```
 ```Tex
@@ -98,6 +96,14 @@ If you use this code or result in your paper, please cite our work as:
   title={Towards audio language modeling-an overview},
   author={Wu, Haibin and Chen, Xuanjun and Lin, Yi-Cheng and Chang, Kai-wei and Chung, Ho-Lam and Liu, Alexander H and Lee, Hung-yi},
   journal={arXiv preprint arXiv:2402.13236},
+  year={2024}
+}
+```
+```Tex
+@article{wu2024codec,
+  title={Codec-SUPERB@ SLT 2024: A lightweight benchmark for neural audio codec models},
+  author={Wu, Haibin and Chen, Xuanjun and Lin, Yi-Cheng and Chang, Kaiwei and Du, Jiawei and Lu, Ke-Han and Liu, Alexander H and Chung, Ho-Lam and Wu, Yuan-Kuei and Yang, Dongchao and others},
+  journal={arXiv preprint arXiv:2409.14085},
   year={2024}
 }
 ```
