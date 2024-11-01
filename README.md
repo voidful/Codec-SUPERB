@@ -100,11 +100,29 @@ If you use this code or result in your paper, please cite our work as:
 }
 ```
 ```Tex
-@article{wu2024codec,
-  title={Codec-SUPERB@ SLT 2024: A lightweight benchmark for neural audio codec models},
-  author={Wu, Haibin and Chen, Xuanjun and Lin, Yi-Cheng and Chang, Kaiwei and Du, Jiawei and Lu, Ke-Han and Liu, Alexander H and Chung, Ho-Lam and Wu, Yuan-Kuei and Yang, Dongchao and others},
-  journal={arXiv preprint arXiv:2409.14085},
-  year={2024}
+@inproceedings{wu-etal-2024-codec,
+    title = "Codec-{SUPERB}: An In-Depth Analysis of Sound Codec Models",
+    author = "Wu, Haibin  and
+      Chung, Ho-Lam  and
+      Lin, Yi-Cheng  and
+      Wu, Yuan-Kuei  and
+      Chen, Xuanjun  and
+      Pai, Yu-Chi  and
+      Wang, Hsiu-Hsuan  and
+      Chang, Kai-Wei  and
+      Liu, Alexander  and
+      Lee, Hung-yi",
+    editor = "Ku, Lun-Wei  and
+      Martins, Andre  and
+      Srikumar, Vivek",
+    booktitle = "Findings of the Association for Computational Linguistics: ACL 2024",
+    month = aug,
+    year = "2024",
+    address = "Bangkok, Thailand",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.findings-acl.616",
+    doi = "10.18653/v1/2024.findings-acl.616",
+    pages = "10330--10348",
 }
 ```
 ## Contribution
