@@ -7,6 +7,7 @@ soundfile==0.12.1
 librosa==0.10.1
 pesq==0.0.4
 descript-audiotools
+sq_codec
 psutil
 praat-parselmouth
 torchmetrics
