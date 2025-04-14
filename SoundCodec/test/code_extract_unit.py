@@ -8,7 +8,7 @@ if __name__ == '__main__':
                         'sample5_16k.wav', 'sample6_48k.wav', 'sample7_16k.wav', 'sample8_16k.wav',
                         'sample9_48k.wav', 'sample10_16k.wav']:
         for codec_name in list_codec():
-            print(f"Synthesizing {sample_file} with {codec_name}")
+            print(f"Synthebssizing {sample_file} with {codec_name}")
             codec = load_codec(codec_name)
             codec_sampling_rate = codec.sampling_rate
             waveform, sample_rate = torchaudio.load(sample_file)
