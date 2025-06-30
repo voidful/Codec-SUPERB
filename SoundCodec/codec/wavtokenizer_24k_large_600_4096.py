@@ -1,8 +1,8 @@
-from SoundCodec.base_codec.wavtokenizer import BaseCodec
+from SoundCodec.base_codec.wavtokenizer import WavTokenizerBaseCodec
 import nlp2
 
-class Codec(BaseCodec):
-    def config(self):
+class Codec(WavTokenizerBaseCodec):
+    def _download_resources(self):
         nlp2.download_file(
             'https://github.com/voidful/WavTokenizer/raw/refs/heads/main/wavtokenizer/configs/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.yaml',
             'wavtokenizer_model')

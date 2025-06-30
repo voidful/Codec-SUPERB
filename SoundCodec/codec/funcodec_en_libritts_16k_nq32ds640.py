@@ -1,9 +1,9 @@
 import nlp2
 
-from SoundCodec.base_codec.funcodec import BaseCodec
+from SoundCodec.base_codec.funcodec import FunCodecBaseCodec
 
 
-class Codec(BaseCodec):
+class Codec(FunCodecBaseCodec):
     def config(self):
         self.setting = "funcodec_en_libritts-16k-nq32ds640"
         self.sampling_rate = 16000

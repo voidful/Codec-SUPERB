@@ -145,5 +145,3 @@ class WavTokenizerBaseCodec(BaseCodec):
         return audio_values
 
 
-# For backward compatibility, keep the old class name
-BaseCodec = WavTokenizerBaseCodec

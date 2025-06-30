@@ -1,9 +1,9 @@
 import json
 import nlp2
-from SoundCodec.base_codec.academicodec import BaseCodec
+from SoundCodec.base_codec.academicodec import AcademicCodecBaseCodec
 
 
-class Codec(BaseCodec):
+class Codec(AcademicCodecBaseCodec):
     def config(self):
         self.setting = "academicodec_hifi_16k_320d"
         nlp2.download_file(
