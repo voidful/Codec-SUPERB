@@ -1,7 +1,7 @@
-from SoundCodec.base_codec.speech_tokenizer import BaseCodec
+from SoundCodec.base_codec.speech_tokenizer import SpeechTokenizerBaseCodec
 import nlp2
 
-class Codec(BaseCodec):
+class Codec(SpeechTokenizerBaseCodec):
     def config(self):
         nlp2.download_file(
             'https://huggingface.co/fnlp/SpeechTokenizer/raw/main/speechtokenizer_hubert_avg/config.json',
