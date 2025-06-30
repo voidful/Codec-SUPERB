@@ -1,5 +1,7 @@
 import os
 from dataclasses import dataclass
+from typing import List, Union, Any
+from abc import ABC, abstractmethod
 
 import numpy as np
 import torchaudio
@@ -25,8 +27,22 @@ class ExtractedUnit:
 
     def to_dict(self):
         return {
-            'unit': self.unit,  # torch.Tensor with shape [codec_layer, time_dim]
+            'unit': self.unit,  # torch.Tensor with shape [codec_layer, time_dim] or [batch, codec_layer, time_dim]
             'stuff_for_synth': self.stuff_for_synth
+        }
+
+
+@dataclass
+class BatchExtractedUnit:
+    units: List[torch.Tensor]  # List of units, one per batch item
+    stuff_for_synth: List[Any]  # List of synthesis data, one per batch item
+    batch_size: int
+
+    def to_dict(self):
+        return {
+            'units': self.units,
+            'stuff_for_synth': self.stuff_for_synth,
+            'batch_size': self.batch_size
         }
 
 
@@ -38,3 +54,93 @@ def save_audio(wav: torch.Tensor, path, sample_rate: int, rescale: bool = False)
     max_val = wav.abs().max()
     wav = wav * min(limit / max_val, 1) if rescale else wav.clamp(-limit, limit)
     torchaudio.save(str(path), wav, sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
+
+
+class BaseCodec(ABC):
+    """Base class for all audio codecs with batch support."""
+    
+    def __init__(self):
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.sampling_rate = None
+        self.setting = None
+        self.config()
+    
+    @abstractmethod
+    def config(self):
+        """Configure the codec (model loading, settings, etc.)"""
+        pass
+    
+    @abstractmethod
+    def extract_unit(self, data):
+        """Extract units from a single audio sample."""
+        pass
+    
+    @abstractmethod
+    def decode_unit(self, stuff_for_synth):
+        """Decode units back to audio for a single sample."""
+        pass
+    
+    def synth(self, data, local_save=True):
+        """Synthesize audio from data for a single sample."""
+        extracted_unit = self.extract_unit(data)
+        data['unit'] = extracted_unit.unit
+        audio_values = self.decode_unit(extracted_unit.stuff_for_synth)
+        if local_save:
+            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+            save_audio(audio_values, audio_path, self.sampling_rate)
+            data['audio'] = audio_path
+        else:
+            data['audio']['array'] = audio_values
+        return data
+    
+    def batch_extract_unit(self, data_list: List[dict]) -> BatchExtractedUnit:
+        """
+        Extract units from a batch of audio samples.
+        Default implementation uses a loop - override for better performance.
+        """
+        units = []
+        stuff_for_synth = []
+        
+        for data in data_list:
+            extracted_unit = self.extract_unit(data)
+            units.append(extracted_unit.unit)
+            stuff_for_synth.append(extracted_unit.stuff_for_synth)
+        
+        return BatchExtractedUnit(
+            units=units,
+            stuff_for_synth=stuff_for_synth,
+            batch_size=len(data_list)
+        )
+    
+    def batch_decode_unit(self, batch_extracted_unit: BatchExtractedUnit) -> List[np.ndarray]:
+        """
+        Decode a batch of units back to audio.
+        Default implementation uses a loop - override for better performance.
+        """
+        audio_values = []
+        
+        for stuff_for_synth in batch_extracted_unit.stuff_for_synth:
+            audio = self.decode_unit(stuff_for_synth)
+            audio_values.append(audio)
+        
+        return audio_values
+    
+    def batch_synth(self, data_list: List[dict], local_save=True) -> List[dict]:
+        """
+        Synthesize audio from a batch of data.
+        Default implementation uses batch_extract_unit and batch_decode_unit.
+        """
+        batch_extracted_unit = self.batch_extract_unit(data_list)
+        batch_audio_values = self.batch_decode_unit(batch_extracted_unit)
+        
+        # Update the data list with results
+        for i, (data, audio_values, unit) in enumerate(zip(data_list, batch_audio_values, batch_extracted_unit.units)):
+            data['unit'] = unit
+            if local_save:
+                audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+                save_audio(torch.tensor(audio_values), audio_path, self.sampling_rate)
+                data['audio'] = audio_path
+            else:
+                data['audio']['array'] = audio_values
+        
+        return data_list

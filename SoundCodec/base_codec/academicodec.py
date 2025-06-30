@@ -12,19 +12,19 @@ from torch.nn.utils import remove_weight_norm
 from torch.nn.utils import spectral_norm
 from torch.nn.utils import weight_norm
 from librosa.util import normalize
-from SoundCodec.base_codec.general import save_audio, ExtractedUnit
+from SoundCodec.base_codec.general import save_audio, ExtractedUnit, BaseCodec, BatchExtractedUnit
+import numpy as np
 
 LRELU_SLOPE = 0.1
 
 
-class BaseCodec:
+class AcademicCodecBaseCodec(BaseCodec):
     def __init__(self):
-        self.config()
+        super().__init__()
         self.model = VQVAE(
             self.config_path,
             self.ckpt_path,
             with_encoder=True)
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = self.model.to(self.device).eval()
 
     def config(self):
@@ -43,19 +43,6 @@ class BaseCodec:
             self.sampling_rate = config['sampling_rate']
 
     @torch.no_grad()
-    def synth(self, data, local_save=True):
-        extracted_unit = self.extract_unit(data)
-        audio_array = self.decode_unit(extracted_unit.stuff_for_synth)
-        data['unit'] = extracted_unit.unit
-        if local_save:
-            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
-            save_audio(audio_array, audio_path, self.sampling_rate)
-            data['audio'] = audio_path
-        else:
-            data['audio']['array'] = audio_array
-        return data
-
-    @torch.no_grad()
     def extract_unit(self, data):
         audio_sample = data["audio"]["array"]
         wav = normalize(audio_sample) * 0.95
@@ -71,6 +58,87 @@ class BaseCodec:
     def decode_unit(self, stuff_for_synth):
         audio_values = self.model(stuff_for_synth)
         return audio_values.cpu().detach()[0].numpy()
+
+    @torch.no_grad()
+    def batch_extract_unit(self, data_list):
+        """Batch extraction for AcademicCodec."""
+        if len(data_list) == 1:
+            # Single item, use regular method
+            extracted_unit = self.extract_unit(data_list[0])
+            return BatchExtractedUnit(
+                units=[extracted_unit.unit],
+                stuff_for_synth=[extracted_unit.stuff_for_synth],
+                batch_size=1
+            )
+        
+        # Prepare batch data
+        wav_list = []
+        
+        for data in data_list:
+            audio_sample = data["audio"]["array"]
+            wav = normalize(audio_sample) * 0.95
+            wav = torch.tensor(wav, dtype=torch.float32)
+            wav_list.append(wav)
+        
+        # Pad all waveforms to the same length
+        max_length = max(wav.shape[0] for wav in wav_list)
+        padded_wavs = []
+        for wav in wav_list:
+            if wav.shape[0] < max_length:
+                padding = max_length - wav.shape[0]
+                wav = torch.nn.functional.pad(wav, (0, padding))
+            padded_wavs.append(wav.unsqueeze(0))  # Add batch dimension
+        
+        # Stack into batch tensor [B, T]
+        batch_wav = torch.stack(padded_wavs, dim=0).to(self.device)
+        
+        # Encode the entire batch at once
+        with torch.no_grad():
+            batch_acoustic_tokens = self.model.encode(batch_wav)
+        
+        # Process results for each item in the batch
+        units = []
+        stuff_for_synth = []
+        
+        for i in range(len(data_list)):
+            # Extract acoustic tokens for this item
+            item_acoustic_token = batch_acoustic_tokens[i:i+1]
+            
+            units.append(item_acoustic_token.squeeze(0).permute(1, 0))
+            stuff_for_synth.append(item_acoustic_token)
+        
+        return BatchExtractedUnit(
+            units=units,
+            stuff_for_synth=stuff_for_synth,
+            batch_size=len(data_list)
+        )
+
+    @torch.no_grad()
+    def batch_decode_unit(self, batch_extracted_unit):
+        """Batch decoding for AcademicCodec."""
+        if batch_extracted_unit.batch_size == 1:
+            # Single item, use regular method
+            return [self.decode_unit(batch_extracted_unit.stuff_for_synth[0])]
+        
+        # Collect all acoustic tokens for batch processing
+        all_acoustic_tokens = []
+        
+        for stuff_for_synth in batch_extracted_unit.stuff_for_synth:
+            all_acoustic_tokens.append(stuff_for_synth)
+        
+        # Stack for batch processing
+        batch_acoustic_tokens = torch.cat(all_acoustic_tokens, dim=0)
+        
+        # Decode the entire batch at once
+        with torch.no_grad():
+            batch_audio_values = self.model(batch_acoustic_tokens)
+        
+        # Split results for each item in the batch
+        audio_values = []
+        for i in range(batch_extracted_unit.batch_size):
+            audio_values.append(batch_audio_values[i].cpu().detach().numpy())
+        
+        return audio_values
 
 
 class AttrDict(dict):
@@ -643,3 +711,7 @@ class VQVAE(nn.Module):
         c = [code.reshape(batch_size, -1) for code in c]
         # shape: [N, T, 4]
         return torch.stack(c, -1)
+
+
+# For backward compatibility, keep the old class name
+BaseCodec = AcademicCodecBaseCodec
