@@ -10,18 +10,34 @@ class WavTokenizerBaseCodec(BaseCodec):
         super().__init__()
 
     def config(self):
+        self._setup_config_and_model()
+
+    def _setup_config_and_model(self):
         try:
-            from encoder.utils import get_config, load_model
-            from decoder.utils import get_config as get_decoder_config, load_model as load_decoder_model
-        except:
-            raise Exception("Please install WavTokenizer first. pip install git+https://github.com/jishengpeng/WavTokenizer.git")
-        
-        self.model_name = "novateur/WavTokenizer-large-speech-75token"
+            from wavtokenizer.decoder.pretrained import WavTokenizer
+        except ImportError:
+            raise Exception(
+                "Please install wavtokenizer first. pip install git+https://github.com/voidful/WavTokenizer.git"
+            )
+
+        self._download_resources()
+        self.model = WavTokenizer.from_pretrained0802(self.config_path, self.ckpt_path)
+        self.model.eval()
+        self.model = self.model.to(self.device)
         self.sampling_rate = 24000
-        
-        # Load model using transformers
-        from transformers import AutoModel
-        self.model = AutoModel.from_pretrained(self.model_name, trust_remote_code=True).to(self.device)
+
+    def _download_resources(self):
+        nlp2.download_file(
+            'https://github.com/voidful/WavTokenizer/raw/refs/heads/main/wavtokenizer/configs/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.yaml',
+            'wavtokenizer_model'
+        )
+        self.config_path = "wavtokenizer/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.json"
+
+        nlp2.download_file(
+            'https://huggingface.co/novateur/WavTokenizer-large-unify-40token/resolve/main/wavtokenizer_large_unify_600_24k.ckpt',
+            "wavtokenizer_model"
+        )
+        self.ckpt_path = "wavtokenizer/wavtokenizer_large_unify_600_24k.ckpt"
 
     @torch.no_grad()
     def extract_unit(self, data):
