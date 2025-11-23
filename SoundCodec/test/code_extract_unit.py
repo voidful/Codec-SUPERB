@@ -4,6 +4,7 @@ import torchaudio
 from SoundCodec.codec import list_codec, load_codec
 
 if __name__ == '__main__':
+    print(list_codec())
     for sample_file in ['sample1_16k.wav', 'sample2_22k.wav', 'sample3_48k.wav', 'sample4_16k.wav',
                         'sample5_16k.wav', 'sample6_48k.wav', 'sample7_16k.wav', 'sample8_16k.wav',
                         'sample9_48k.wav', 'sample10_16k.wav']:
