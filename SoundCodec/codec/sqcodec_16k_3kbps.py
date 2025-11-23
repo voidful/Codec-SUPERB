@@ -1,6 +1,6 @@
-from SoundCodec.base_codec.sqcodec import BaseCodec
+from SoundCodec.base_codec.sqcodec import SQCodecBaseCodec
 
 
-class Codec(BaseCodec):
+class Codec(SQCodecBaseCodec):
     def config(self):
         self.config_name = "3kbps"

@@ -1,8 +1,8 @@
-from SoundCodec.base_codec.audiodec import BaseCodec
+from SoundCodec.base_codec.audiodec import AudioDecBaseCodec
 import nlp2
 
 
-class Codec(BaseCodec):
+class Codec(AudioDecBaseCodec):
     def config(self):
         self.setting = "audiodec_24k_320d"
         try:

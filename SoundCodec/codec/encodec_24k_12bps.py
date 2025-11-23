@@ -1,6 +1,6 @@
-from SoundCodec.base_codec.encodec import BaseCodec
+from SoundCodec.base_codec.encodec import EncodecBaseCodec
 
-class Codec(BaseCodec):
+class Codec(EncodecBaseCodec):
     def config(self):
         super().config()
         self.model.set_target_bandwidth(12.0)
