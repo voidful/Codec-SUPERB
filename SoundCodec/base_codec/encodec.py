@@ -10,13 +10,14 @@ class EncodecBaseCodec(BaseCodec):
             from encodec.utils import convert_audio
             self.EncodecModel = EncodecModel
             self.convert_audio = convert_audio
-        except:
+        except ImportError:
             raise Exception("Please install encodec first. pip install encodec")
+        self.model = None
         super().__init__()
-        self.model = self.EncodecModel.encodec_model_24khz().to(self.device)
 
     def config(self):
-        self.model = self.EncodecModel.encodec_model_24khz()
+        if self.model is None:
+            self.model = self.EncodecModel.encodec_model_24khz().to(self.device)
         self.model.set_target_bandwidth(6.0)
         self.setting = "encodec_24khz_6.0"
         self.sampling_rate = 24_000
