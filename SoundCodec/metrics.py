@@ -458,6 +458,7 @@ def get_metrics(signal, recons):
             "stft": lambda: stft_loss(x, y).cpu().item(),
             "waveform": lambda: waveform_loss(x, y).cpu().item(),
             "pesq": lambda: pesqfn(x, y),
+            "pesq-wb": lambda: pesqfn(x, y),
             "stoi": lambda: stoifn(x, y, x.sample_rate),
             "f0corr": lambda: f0corr(x, y),
         }

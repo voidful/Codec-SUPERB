@@ -10,7 +10,7 @@ from datasets import load_dataset, load_from_disk
 from collections import defaultdict
 from audiotools import AudioSignal
 from SoundCodec.base_codec.general import pad_arrays_to_match
-from metrics import get_metrics
+from SoundCodec.metrics import get_metrics
 import psutil
 from tqdm.contrib.concurrent import process_map
 
