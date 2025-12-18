@@ -81,6 +81,10 @@ Every codec in Codec-SUPERB includes optimized batch processing:
 - **Descript Audio Codec**: Batch compression/decompression
 - **SQCodec**: Feature-aware batch encoding
 - **FunCodec**: AudioSignal batch handling
+- **AUV**: All-in-one codec with symmetric quantization
+- **BigCodec**: Low-bitrate neural speech coding
+- **S3Tokenizer**: Semantic-aware batch tokenization
+- **UniCodec**: High-quality speech reconstruction
 - **WavTokenizer**: Bandwidth-aware batch processing
 - **AcademicCodec**: Acoustic token batch generation
 
@@ -297,3 +301,7 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 - https://github.com/yangdongchao/AcademiCodec
 - https://github.com/facebookresearch/AudioDec
 - https://github.com/alibaba-damo-academy/FunCodec
+- https://github.com/SWivid/AUV
+- https://github.com/Aria-K-Alethia/BigCodec
+- https://github.com/xingchensong/S3Tokenizer
+- https://github.com/mesolitica/UniCodec-fix
