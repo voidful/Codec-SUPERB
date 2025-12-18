@@ -34,7 +34,7 @@ SHELL ["conda", "run", "-n", "a_asr", "/bin/bash", "-c"]
 RUN pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 && \
     pip install librosa==0.10.1 pandas==2.0.3 && \
     pip install -U openai-whisper && \
-    pip install jiwer==3.0.3 editdistance==0.8.1
+    pip install jiwer==3.0.3 Levenshtein
 
 # Application - Audio Event Classification
 RUN git clone https://github.com/microsoft/CLAP.git /workspace/CLAP

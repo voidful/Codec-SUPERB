@@ -11,7 +11,10 @@ class DACBaseCodec(BaseCodec):
         # Force CPU if MPS is detected because DAC/audiotools uses float64 which MPS doesn't support
         if self.device == 'mps':
              self.device = 'cpu'
-        import dac
+        try:
+            import dac
+        except:
+            raise Exception("Please install descript-audio-codec first. pip install descript-audio-codec")
         self.model_path = dac.utils.download(model_type=self.model_type)
         self.model = dac.DAC.load(self.model_path)
         self.model.to(self.device)
@@ -19,11 +22,7 @@ class DACBaseCodec(BaseCodec):
     def config(self):
         self.model_type = "24khz"
         self.sampling_rate = 24_000
-        try:
-            import dac
-        except:
-            raise Exception("Please install descript-audio-codec first. pip install descript-audio-codec")
-
+        
     @torch.no_grad()
     def synth(self, data, local_save=True):
         extracted_unit = self.extract_unit(data)
