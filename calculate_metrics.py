@@ -7,13 +7,6 @@ def calculate_metrics():
     print(f"{'Codec':<40} | {'BPS (kbps)':<10} | {'TPS':<10}")
     print("-" * 65)
     
-    os.environ['CUDA_VISIBLE_DEVICES'] = ''
-    # Monkeypatch to ensure no MPS is used
-    if hasattr(torch.backends, 'mps'):
-        torch.backends.mps.is_available = lambda: False
-        torch.backends.mps.is_built = lambda: False
-    device = 'cpu'
-    
     codecs = list_codec()
     
     # Create specific test inputs
@@ -21,12 +14,6 @@ def calculate_metrics():
     
     for name in codecs:
         try:
-            # Skip problematic ones for now if they crash, but try to run all
-            if name in ['bigcodec_1k', 'dac_24k', 'dac_44k', 's3tokenizer_v1']:
-               # We know these are problematic on this env, but let's try or skip
-               # For now, let's catch exceptions
-               pass
-
             metric_name = name
             codec = load_codec(name)
             
