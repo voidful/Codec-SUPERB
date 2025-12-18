@@ -34,10 +34,14 @@ def compute_metrics(original, model, max_duration):
 
 def process_entry(args):
     original_iter, model_iter, max_duration = args
-    metrics = compute_metrics(original_iter, model_iter, max_duration)
-    if metrics is not None:
-        return metrics
-    else:
+    try:
+        metrics = compute_metrics(original_iter, model_iter, max_duration)
+        if metrics is not None:
+            return metrics
+        else:
+            return {}
+    except Exception as e:
+        print(f"Error processing entry: {e}")
         return {}
 
 
