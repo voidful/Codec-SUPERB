@@ -3,29 +3,10 @@ import json
 import gc
 import os
 import time
-import sys # Added for the torchcodec hack
-from datetime import datetime
+import soundfile as sf
+import io
 
-# Hack to disable torchcodec usage in datasets > 4.0
-try:
-    import torchcodec
-    del torchcodec
-except ImportError:
-    pass
-sys.modules["torchcodec"] = None
-
-import numpy as np
-from datasets import load_dataset, load_from_disk
-from collections import defaultdict
-from audiotools import AudioSignal
-from SoundCodec.base_codec.general import pad_arrays_to_match
-from SoundCodec.metrics import get_metrics
-import psutil
-from tqdm.contrib.concurrent import process_map
-import datasets
-
-
-# The previous hack for datasets.config.AUDIO_DECODING_BACKEND is removed as per instruction.
+# The previous hacks are removed as they were ineffective against datasets behavior.
 
 
 def default_converter(o):
@@ -34,9 +15,60 @@ def default_converter(o):
     raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
 
 
+def safe_load_audio(audio_entry):
+    """
+    Safely load audio array and sampling rate, bypassing torchcodec if simple path reading is possible.
+    Returns: (array [C, T] or [T], sampling_rate) or (None, None) if failed.
+    """
+    try:
+        # Try to extract path first to use soundfile directly
+        path = None
+        if isinstance(audio_entry, dict):
+            if 'path' in audio_entry and audio_entry['path'] is not None:
+                path = audio_entry['path']
+        elif hasattr(audio_entry, "__getitem__"):
+             # For AudioDecoder, try to access 'path' without triggering full decode if possible.
+             # But usually accessing any key decodes everything in newer datasets versions.
+             # However, accessing 'path' specifically *might* be safe or exposed as property.
+             try:
+                 path = audio_entry['path']
+             except:
+                 pass
+        
+        if path:
+            try:
+                # Load with soundfile
+                array, sr = sf.read(path)
+                return array, sr
+            except Exception:
+                # Fallback if soundfile fails (e.g. mp3 without libs, or remote URL)
+                pass
+        
+        # Fallback to accessing 'array' which triggers datasets decoding (and potentially torchcodec)
+        if hasattr(audio_entry, "__getitem__") or isinstance(audio_entry, dict):
+             if 'array' in audio_entry and 'sampling_rate' in audio_entry:
+                 return audio_entry['array'], audio_entry['sampling_rate']
+
+        return None, None
+    except Exception as e:
+        print(f"Error in safe_load_audio: {e}")
+        return None, None
+
+
 def compute_metrics(original, model, max_duration):
-    original_arrays, resynth_array = pad_arrays_to_match(original['audio']['array'], model['audio']['array'])
-    sampling_rate = original['audio']['sampling_rate']
+    orig_array, orig_sr = safe_load_audio(original['audio'])
+    model_array, model_sr = safe_load_audio(model['audio'])
+    
+    if orig_array is None or model_array is None:
+        return None # Skip if audio loading failed
+
+    original_arrays, resynth_array = pad_arrays_to_match(orig_array, model_array)
+    # Use the SR from original (should match model ideally, or be handled by AudioSignal)
+    # AudioSignal handles resampling if needed, but here we assume match after padding or logic in pad_arrays_to_match
+    
+    # Check if pad_arrays_to_match worked (it returns numpy arrays)
+    
+    sampling_rate = orig_sr
     original_signal = AudioSignal(original_arrays, sampling_rate)
     if original_signal.duration > max_duration:
         return None
