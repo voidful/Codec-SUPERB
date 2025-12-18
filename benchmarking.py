@@ -27,37 +27,24 @@ def default_converter(o):
 
 def safe_load_audio(audio_entry):
     """
-    Safely load audio array and sampling rate, bypassing torchcodec if simple path reading is possible.
-    Returns: (array [C, T] or [T], sampling_rate) or (None, None) if failed.
+    Safely load audio array and sampling rate from a non-decoded datasets Audio feature.
+    Returns: (array [T, C], sampling_rate) or (None, None) if failed.
     """
     try:
-        # Try to extract path first to use soundfile directly
-        path = None
+        # If it's already a dict with array (decoded)
+        if isinstance(audio_entry, dict) and 'array' in audio_entry:
+            return audio_entry['array'], audio_entry['sampling_rate']
+
+        # If it's the raw dict (decode=False)
         if isinstance(audio_entry, dict):
-            if 'path' in audio_entry and audio_entry['path'] is not None:
-                path = audio_entry['path']
-        elif hasattr(audio_entry, "__getitem__"):
-             # For AudioDecoder, try to access 'path' without triggering full decode if possible.
-             # But usually accessing any key decodes everything in newer datasets versions.
-             # However, accessing 'path' specifically *might* be safe or exposed as property.
-             try:
-                 path = audio_entry['path']
-             except:
-                 pass
-        
-        if path:
-            try:
-                # Load with soundfile
+            audio_bytes = audio_entry.get('bytes')
+            path = audio_entry.get('path')
+            if audio_bytes:
+                array, sr = sf.read(io.BytesIO(audio_bytes))
+                return array, sr
+            elif path:
                 array, sr = sf.read(path)
                 return array, sr
-            except Exception:
-                # Fallback if soundfile fails (e.g. mp3 without libs, or remote URL)
-                pass
-        
-        # Fallback to accessing 'array' which triggers datasets decoding (and potentially torchcodec)
-        if hasattr(audio_entry, "__getitem__") or isinstance(audio_entry, dict):
-             if 'array' in audio_entry and 'sampling_rate' in audio_entry:
-                 return audio_entry['array'], audio_entry['sampling_rate']
 
         return None, None
     except Exception as e:
@@ -70,14 +57,9 @@ def compute_metrics(original, model, max_duration):
     model_array, model_sr = safe_load_audio(model['audio'])
     
     if orig_array is None or model_array is None:
-        return None # Skip if audio loading failed
+        return None 
 
     original_arrays, resynth_array = pad_arrays_to_match(orig_array, model_array)
-    # Use the SR from original (should match model ideally, or be handled by AudioSignal)
-    # AudioSignal handles resampling if needed, but here we assume match after padding or logic in pad_arrays_to_match
-    
-    # Check if pad_arrays_to_match worked (it returns numpy arrays)
-    
     sampling_rate = orig_sr
     original_signal = AudioSignal(original_arrays, sampling_rate)
     if original_signal.duration > max_duration:
@@ -96,47 +78,23 @@ def process_entry(args):
         else:
             return {}
     except Exception as e:
-        import traceback
         print(f"Error processing entry: {e}")
-        try:
-            print("Debug Info:")
-            if isinstance(original_iter, dict):
-                print(f"Original keys: {list(original_iter.keys())}")
-                if 'audio' in original_iter:
-                    audio_data = original_iter['audio']
-                    print(f"Original audio type: {type(audio_data)}")
-                    if isinstance(audio_data, dict) and 'array' in audio_data:
-                        arr = audio_data['array']
-                        print(f"Original audio array type: {type(arr)}")
-                        if hasattr(arr, 'shape'):
-                            print(f"Original audio array shape: {arr.shape}")
-            
-            if isinstance(model_iter, dict):
-                print(f"Model keys: {list(model_iter.keys())}")
-                if 'audio' in model_iter:
-                    audio_data = model_iter['audio']
-                    print(f"Model audio type: {type(audio_data)}")
-                    if isinstance(audio_data, dict) and 'array' in audio_data:
-                        arr = audio_data['array']
-                        print(f"Model audio array type: {type(arr)}")
-                        if hasattr(arr, 'shape'):
-                            print(f"Model audio array shape: {arr.shape}")
-            print("Traceback:")
-            traceback.print_exc()
-        except Exception as debug_e:
-            print(f"Error printing debug info: {debug_e}")
-            traceback.print_exc()
         return {}
 
 
 def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None):
-    start_time = time.time()  # Start time measurement
+    start_time = time.time()
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
 
     if os.path.exists(dataset_name):
         c = load_from_disk(dataset_name)
     else:
         c = load_dataset(dataset_name, streaming=is_stream)
+    
+    # Disable automatic decoding to bypass torchcodec
+    for split in c.keys():
+        c[split] = c[split].cast_column("audio", datasets.Audio(decode=False))
+
     models = [key for key in c.keys() if key != "original"]
 
     result_data = {}
