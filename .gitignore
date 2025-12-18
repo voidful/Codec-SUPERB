@@ -12,3 +12,19 @@
 !/SoundCodec/test/sample10_16k.wav
 
 __pycache__/
+.DS_Store
+
+# Models
+wavtokenizer_model/
+unicodec_model/
+academicodec_hifi/
+audiodec_autoencoder_24k_320d/
+audiodec_vocoder_24k_320d/
+funcodec/
+speechtokenizer_hubert_avg/
+
+# Testing/Tools
+check_all_codecs.py
+test_imports.py
+test_imports_detailed.py
+benchmarking.py
