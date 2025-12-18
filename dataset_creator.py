@@ -1,19 +1,22 @@
 import argparse
 from datasets import DatasetDict, Audio, load_from_disk
 from SoundCodec.codec import load_codec, list_codec
-from SoundCodec.dataset import load_dataset, apply_audio_cast
-from SoundCodec.dataset.general import extract_unit
+from SoundCodec.dataset import load_dataset
+from SoundCodec.dataset.general import apply_audio_cast, extract_unit
 
 
 def run_experiment(dataset_name):
     cleaned_dataset = load_dataset(dataset_name)
-    d_item = next(iter(cleaned_dataset))
-    sampling_rate = d_item['audio']['sampling_rate']
-    cleaned_dataset = load_dataset(dataset_name)
+    if args.limit:
+        cleaned_dataset = cleaned_dataset.select(range(min(args.limit, len(cleaned_dataset))))
+    
     print("before filter duration", cleaned_dataset)
     cleaned_dataset = cleaned_dataset.filter(
         lambda x: len(x['audio']['array']) / x['audio']['sampling_rate'] <= args.max_duration)
     print("after filter duration", cleaned_dataset)
+    
+    d_item = next(iter(cleaned_dataset))
+    sampling_rate = d_item['audio']['sampling_rate']
     cleaned_dataset = apply_audio_cast(cleaned_dataset, sampling_rate)
     if not args.extract_unit_only:
         datasets_dict = DatasetDict({'original': cleaned_dataset})
@@ -66,5 +69,6 @@ if __name__ == "__main__":
     parser.add_argument('--max_duration', required=False, type=int, default=120)
     parser.add_argument('--push_to_hub', required=False, action='store_true')
     parser.add_argument('--upload_name', required=False, default='Codec-SUPERB')
+    parser.add_argument('--limit', required=False, type=int, default=None)
     args = parser.parse_args()
     run_experiment(args.dataset)

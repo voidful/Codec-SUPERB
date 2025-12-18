@@ -20,7 +20,9 @@ class EncodecHFBaseCodec(BaseCodec):
         data['unit'] = extracted_unit.unit
         audio_values = self.decode_unit(extracted_unit.stuff_for_synth)
         if local_save:
-            audio_path = f"dummy_{self.pretrained_model_name}/{data['id']}.wav"
+            from SoundCodec.base_codec.general import uuid
+            audio_id = data.get('id', str(uuid.uuid4()))
+            audio_path = f"dummy_{self.pretrained_model_name.replace('/', '_')}/{audio_id}.wav"
             save_audio(audio_values, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:

@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import Leaderboard from './Leaderboard'
 import './App.css'
 import Header from './Header';
@@ -8,19 +9,40 @@ import results from './results/data';
 function App() {
   return (
     <div className="App">
+      <div className="blob-container">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
+
       <Header />
-      <div className="landing-page">
-      <Card title="Welcome to Codec Superb!">
-        <p>This study introduces Codec-SUPERB, a benchmark for evaluating sound codec models across key tasks, promoting advancements through a community-driven database and in-depth analysis.</p>
-        <img src="Overview.png" alt="Codec Superb Overview" />
-      </Card>
-      <Card>
-          <h1>Results</h1>
-          <Leaderboard results={results} />
-      </Card>
-    </div>
+
+      <main className="landing-page">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          <Card title="Welcome to Codec Superb!" delay={0.2}>
+            <p>Codec-SUPERB is a pioneering benchmark for evaluating audio codec models across diverse tasks. We promote advancements through a community-driven database and deep performance analysis.</p>
+            <div className="image-wrapper">
+              <img src="Overview.png" alt="Codec Superb Overview" />
+            </div>
+          </Card>
+
+          <Card title="Leaderboard" delay={0.4}>
+            <div className="results-section">
+              <Leaderboard results={results} />
+            </div>
+          </Card>
+        </motion.div>
+      </main>
+
+      <footer className="main-footer">
+        <p>© {new Date().getFullYear()} Codec Superb Project. Built for the Audio Research Community.</p>
+      </footer>
     </div>
   );
 }
 
-export default App
+export default App;
