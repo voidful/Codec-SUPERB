@@ -17,7 +17,8 @@ setup(
             'descript-audio-codec',
             'funcodec @ git+https://github.com/voidful/FunCodec.git',
             'AudioDec @ git+https://github.com/voidful/AudioDec.git',
-            'wavtokenizer @ git+https://github.com/voidful/WavTokenizer.git'
+            'wavtokenizer @ git+https://github.com/voidful/WavTokenizer.git',
+            'unicodec @ git+https://github.com/mesolitica/UniCodec-fix'
         ]
     }
 )
