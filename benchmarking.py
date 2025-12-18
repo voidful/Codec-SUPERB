@@ -43,14 +43,34 @@ def process_entry(args):
     except Exception as e:
         import traceback
         print(f"Error processing entry: {e}")
-        # Print debug info for the first few errors to avoid log spam (but since I'm running blind, just print for one and maybe logic to stop spam? No, just print once or catch all)
-        # Actually let's print the shape/type of inputs if available
         try:
-            print(f"Debug - Original: Type={type(original_iter['audio']['array'])}, Shape={original_iter['audio']['array'].shape}")
-            print(f"Debug - Model: Type={type(model_iter['audio']['array'])}, Shape={model_iter['audio']['array'].shape}")
+            print("Debug Info:")
+            if isinstance(original_iter, dict):
+                print(f"Original keys: {list(original_iter.keys())}")
+                if 'audio' in original_iter:
+                    audio_data = original_iter['audio']
+                    print(f"Original audio type: {type(audio_data)}")
+                    if isinstance(audio_data, dict) and 'array' in audio_data:
+                        arr = audio_data['array']
+                        print(f"Original audio array type: {type(arr)}")
+                        if hasattr(arr, 'shape'):
+                            print(f"Original audio array shape: {arr.shape}")
+            
+            if isinstance(model_iter, dict):
+                print(f"Model keys: {list(model_iter.keys())}")
+                if 'audio' in model_iter:
+                    audio_data = model_iter['audio']
+                    print(f"Model audio type: {type(audio_data)}")
+                    if isinstance(audio_data, dict) and 'array' in audio_data:
+                        arr = audio_data['array']
+                        print(f"Model audio array type: {type(arr)}")
+                        if hasattr(arr, 'shape'):
+                            print(f"Model audio array shape: {arr.shape}")
+            print("Traceback:")
             traceback.print_exc()
-        except:
-            pass
+        except Exception as debug_e:
+            print(f"Error printing debug info: {debug_e}")
+            traceback.print_exc()
         return {}
 
 
