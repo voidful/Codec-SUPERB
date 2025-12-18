@@ -3,7 +3,16 @@ import json
 import gc
 import os
 import time
+import sys # Added for the torchcodec hack
 from datetime import datetime
+
+# Hack to disable torchcodec usage in datasets > 4.0
+try:
+    import torchcodec
+    del torchcodec
+except ImportError:
+    pass
+sys.modules["torchcodec"] = None
 
 import numpy as np
 from datasets import load_dataset, load_from_disk
@@ -15,12 +24,8 @@ import psutil
 from tqdm.contrib.concurrent import process_map
 import datasets
 
-try:
-    if hasattr(datasets.config, "AUDIO_DECODING_BACKEND"):
-        datasets.config.AUDIO_DECODING_BACKEND = "soundfile"
-        print("Forced datasets to use 'soundfile' backend.")
-except Exception as e:
-    print(f"Could not force soundfile backend: {e}")
+
+# The previous hack for datasets.config.AUDIO_DECODING_BACKEND is removed as per instruction.
 
 
 def default_converter(o):
