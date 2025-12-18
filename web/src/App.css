@@ -15,6 +15,17 @@
   z-index: 10;
 }
 
+.leaderboard-note {
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.leaderboard-note strong {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
 .main-footer {
   padding: 3rem;
   text-align: center;

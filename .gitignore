@@ -32,3 +32,4 @@ benchmarking.py
 # Data
 cached_datasets/
 datasets/
+*_evaluation_results*.json

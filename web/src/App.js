@@ -31,6 +31,7 @@ function App() {
           </Card>
 
           <Card title="Leaderboard" delay={0.4}>
+            <p className="leaderboard-note">Comparing performance across <strong>Speech</strong>, <strong>Audio</strong>, and <strong>Music</strong> categories.</p>
             <div className="results-section">
               <Leaderboard results={results} />
             </div>
