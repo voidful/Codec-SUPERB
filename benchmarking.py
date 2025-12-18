@@ -41,7 +41,16 @@ def process_entry(args):
         else:
             return {}
     except Exception as e:
+        import traceback
         print(f"Error processing entry: {e}")
+        # Print debug info for the first few errors to avoid log spam (but since I'm running blind, just print for one and maybe logic to stop spam? No, just print once or catch all)
+        # Actually let's print the shape/type of inputs if available
+        try:
+            print(f"Debug - Original: Type={type(original_iter['audio']['array'])}, Shape={original_iter['audio']['array'].shape}")
+            print(f"Debug - Model: Type={type(model_iter['audio']['array'])}, Shape={model_iter['audio']['array'].shape}")
+            traceback.print_exc()
+        except:
+            pass
         return {}
 
 
