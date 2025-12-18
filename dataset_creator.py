@@ -35,7 +35,7 @@ def run_experiment(dataset_name):
         try:
             codec = load_codec(codec_name)
         except Exception as e:
-            if args.only_1d and "unicodec" in codec_name:
+            if args.only_1d and ("unicodec" in codec_name or "auv" in codec_name):
                 print(f"Skipping {codec_name} for 1D check as requested/failed load: {e}")
                 continue
             print(f"Error loading codec {codec_name}: {e}")
