@@ -13,6 +13,14 @@ from SoundCodec.base_codec.general import pad_arrays_to_match
 from SoundCodec.metrics import get_metrics
 import psutil
 from tqdm.contrib.concurrent import process_map
+import datasets
+
+try:
+    if hasattr(datasets.config, "AUDIO_DECODING_BACKEND"):
+        datasets.config.AUDIO_DECODING_BACKEND = "soundfile"
+        print("Forced datasets to use 'soundfile' backend.")
+except Exception as e:
+    print(f"Could not force soundfile backend: {e}")
 
 
 def default_converter(o):
