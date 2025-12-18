@@ -28,7 +28,9 @@ class DACBaseCodec(BaseCodec):
         data['unit'] = extracted_unit.unit
         decompressed_audio = self.model.decompress(compressed_audio).audio_data.squeeze(0)
         if local_save:
-            audio_path = f"dummy-descript-audio-codec-{self.model_type}/{data['id']}.wav"
+            from SoundCodec.base_codec.general import uuid
+            audio_id = data.get('id', str(uuid.uuid4()))
+            audio_path = f"dummy-descript-audio-codec-{self.model_type}/{audio_id}.wav"
             save_audio(decompressed_audio, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:

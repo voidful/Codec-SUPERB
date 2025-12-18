@@ -1,22 +1,241 @@
 const results = {
- 'funcodec_en_libritts_16k_nq32ds320': {'bps': 16, 'speech': 0.7046634097553245, 'audio': 0.5813143405751103, 'music': 0.6492228250203304, 'WER': 3.28, 'EER': 1.76, 'minDCF': 0.12, 'ACC': 67.63, 'mAP': 25.52},
- 'funcodec_en_libritts_16k_nq32ds640': {'bps': 8, 'speech': 0.6781538823670786, 'audio': 0.5782206205739593, 'music': 0.6317069027506513, 'WER': 3.43, 'EER': 2.04, 'minDCF': 0.13, 'ACC': 68.26, 'mAP': 21.43},
- 'dac_24k': {'bps': 24, 'speech': 0.8635868731944552, 'audio': 0.635926321401109, 'music': 0.8152730341160777, 'WER': 2.96, 'EER': 2.24, 'minDCF': 0.14, 'ACC': 69.56, 'mAP': 41.37},
- 'funcodec_en_libritts_16k_gr1nq32ds320': {'bps': 16, 'speech': 0.723966896525529, 'audio': 0.5824965895396587, 'music': 0.6674006973812399, 'WER': 3.21, 'EER': 1.50, 'minDCF': 0.10, 'ACC': 63.54, 'mAP': 37.31},
- 'academicodec_hifi_24k_320d': {'bps': 3, 'speech': 0.6112398890675668, 'audio': 0.5915525047563863, 'music': 0.6035309322126859, 'WER': 4.49, 'EER': 6.16, 'minDCF': 0.36, 'ACC': 65.95, 'mAP': 14.01},
- 'encodec_24k_12bps': {'bps': 12, 'speech': 0.7484265360359972, 'audio': 0.6058457904772402, 'music': 0.71023026879839, 'WER': 3.16, 'EER': 1.81, 'minDCF': 0.10, 'ACC': 66.18, 'mAP': 37.77},
- 'encodec_24k_24bps': {'bps': 24, 'speech': 0.7750640337850226, 'audio': 0.6089645303954081, 'music': 0.7319528492080156, 'WER': 3.22, 'EER': 3.44, 'minDCF': 0.21, 'ACC': 67.63, 'mAP': 35.84},
- 'dac_44k': {'bps': 8, 'speech': 0.8020500330342413, 'audio': 0.7024724561468191, 'music': 0.7695071734476676, 'WER': 9.21, 'EER': 13.88, 'minDCF': 0.68, 'ACC': 58.84, 'mAP': 18.84},
- 'funcodec_zh_en_16k_nq32ds320': {'bps': 16, 'speech': 0.7255823069418212, 'audio': 0.5827396676814205, 'music': 0.6653222147388361, 'WER': 3.21, 'EER': 1.52, 'minDCF': 0.11, 'ACC': 69.25, 'mAP': 26.42},
- 'funcodec_zh_en_16k_nq32ds640': {'bps': 8, 'speech': 0.7176012643274856, 'audio': 0.582532675090953, 'music': 0.6672976810583563, 'WER': 3.27, 'EER': 1.60, 'minDCF': 0.11, 'ACC': 69.55, 'mAP': 33.59},
- 'academicodec_hifi_16k_320d_large_uni': {'bps': 2, 'speech': 0.6166611505694835, 'audio': 0.5743126244264974, 'music': 0.6299426060557733, 'WER': 4.94, 'EER': 4.43, 'minDCF': 0.29, 'ACC': 65.96, 'mAP': 16.19},
- 'encodec_24k_3bps': {'bps': 3, 'speech': 0.6359634179396756, 'audio': 0.5988240641791379, 'music': 0.6209707173984711, 'WER': 3.49, 'EER': 4.28, 'minDCF': 0.27, 'ACC': 66.18, 'mAP': 32.43},
- 'academicodec_hifi_16k_320d': {'bps': 2, 'speech': 0.6095326866119063, 'audio': 0.5736083819953895, 'music': 0.6010745702722795, 'WER': 4.02, 'EER': 3.31, 'minDCF': 0.24, 'ACC': 65.49, 'mAP': 15.11},
- 'audiodec_24k_320d': {'bps': 6.4, 'speech': 0.5955507885063988, 'audio': 0.6020517646070895, 'music': 0.5718777914767119, 'WER': 3.18, 'EER': 3.59, 'minDCF': 0.26, 'ACC': 69.18, 'mAP': 32.04},
- 'dac_16k': {'bps': 6, 'speech': 0.7976470668795377, 'audio': 0.5905287787904119, 'music': 0.7494117454378744, 'WER': 3.26, 'EER': 1.59, 'minDCF': 0.12, 'ACC': 68.81, 'mAP': 41.08},
- 'encodec_24k_1_5bps': {'bps': 1.5, 'speech': 0.5793470594055835, 'audio': 0.5943991274688806, 'music': 0.5680054954838615, 'WER': 3.17, 'EER': 3.15, 'minDCF': 0.19, 'ACC': 68.26, 'mAP': 36.64},
- 'encodec_24k_6bps': {'bps': 6, 'speech': 0.6965480886508195, 'audio': 0.6022051076781016, 'music': 0.6694668229923247, 'WER': 3.28, 'EER': 1.60, 'minDCF': 0.11, 'ACC': 69.55, 'mAP': 33.59},
- 'speech_tokenizer_16k': {'bps': 4, 'speech': 0.6438394082130589, 'audio': 0.5814713410971902, 'music': 0.5854609902617357, 'WER': 3.94, 'EER': 5.22, 'minDCF': 0.30, 'ACC': 65.70, 'mAP': 17.41},
- 'funcodec_en_libritts_16k_gr8nq32ds320': {'bps': 16, 'speech': 0.7040695674088161, 'audio': 0.5829378807299235, 'music': 0.6678934346550227, 'WER': 3.21, 'EER': 1.52, 'minDCF': 0.11, 'ACC': 69.25, 'mAP': 26.42}
+ "academicodec_hifi_16k_320d": {
+  "bps": 2,
+  "mel": 2.369,
+  "pesq": 2.236,
+  "stoi": 0.855,
+  "f0corr": 0.896
+ },
+ "academicodec_hifi_16k_320d_large_uni": {
+  "bps": 2,
+  "mel": 2.316,
+  "pesq": 2.303,
+  "stoi": 0.853,
+  "f0corr": 0.858
+ },
+ "academicodec_hifi_24k_320d": {
+  "bps": 3,
+  "mel": 2.398,
+  "pesq": 2.151,
+  "stoi": 0.866,
+  "f0corr": 0.736
+ },
+ "audiodec_24k_320d": {
+  "bps": 6.4,
+  "mel": 0.895,
+  "pesq": 1.625,
+  "stoi": 0.725,
+  "f0corr": 0.741
+ },
+ "auv": {
+  "bps": 1,
+  "mel": 6.738,
+  "pesq": 1.066,
+  "stoi": 0.242,
+  "f0corr": 0.134
+ },
+ "bigcodec_1k": {
+  "bps": 1,
+  "mel": 0.761,
+  "pesq": 2.199,
+  "stoi": 0.853,
+  "f0corr": 0.855
+ },
+ "dac_16k": {
+  "bps": 6,
+  "mel": 0.508,
+  "pesq": 3.855,
+  "stoi": 0.957,
+  "f0corr": 0.877
+ },
+ "dac_24k": {
+  "bps": 24,
+  "mel": 0.293,
+  "pesq": 4.481,
+  "stoi": 0.993,
+  "f0corr": 0.996
+ },
+ "dac_44k": {
+  "bps": 8,
+  "mel": 0.538,
+  "pesq": 3.824,
+  "stoi": 0.953,
+  "f0corr": 0.959
+ },
+ "encodec_24k_12bps": {
+  "bps": 12,
+  "mel": 0.948,
+  "pesq": 3.114,
+  "stoi": 0.93,
+  "f0corr": 0.993
+ },
+ "encodec_24k_1_5bps": {
+  "bps": 1.5,
+  "mel": 1.331,
+  "pesq": 1.462,
+  "stoi": 0.773,
+  "f0corr": 0.666
+ },
+ "encodec_24k_24bps": {
+  "bps": 24,
+  "mel": 0.889,
+  "pesq": 3.467,
+  "stoi": 0.952,
+  "f0corr": 0.88
+ },
+ "encodec_24k_3bps": {
+  "bps": 3,
+  "mel": 1.175,
+  "pesq": 1.923,
+  "stoi": 0.841,
+  "f0corr": 0.826
+ },
+ "encodec_24k_6bps": {
+  "bps": 6,
+  "mel": 1.06,
+  "pesq": 2.538,
+  "stoi": 0.893,
+  "f0corr": 0.837
+ },
+ "funcodec_en_libritts_16k_gr1nq32ds320": {
+  "bps": 16,
+  "mel": 0.795,
+  "pesq": 3.485,
+  "stoi": 0.826,
+  "f0corr": 0.797
+ },
+ "funcodec_en_libritts_16k_gr8nq32ds320": {
+  "bps": 16,
+  "mel": 0.737,
+  "pesq": 3.049,
+  "stoi": 0.829,
+  "f0corr": 0.688
+ },
+ "funcodec_en_libritts_16k_nq32ds320": {
+  "bps": 16,
+  "mel": 0.765,
+  "pesq": 2.754,
+  "stoi": 0.924,
+  "f0corr": 0.808
+ },
+ "funcodec_en_libritts_16k_nq32ds640": {
+  "bps": 8,
+  "mel": 0.814,
+  "pesq": 2.529,
+  "stoi": 0.9,
+  "f0corr": 0.848
+ },
+ "funcodec_zh_en_16k_nq32ds320": {
+  "bps": 16,
+  "mel": 0.759,
+  "pesq": 3.11,
+  "stoi": 0.942,
+  "f0corr": 0.819
+ },
+ "funcodec_zh_en_16k_nq32ds640": {
+  "bps": 8,
+  "mel": 0.745,
+  "pesq": 2.995,
+  "stoi": 0.934,
+  "f0corr": 0.776
+ },
+ "s3tokenizer_v1": {
+  "bps": 0.1,
+  "mel": 8.583,
+  "pesq": 0.0,
+  "stoi": 0.0,
+  "f0corr": 1.0
+ },
+ "speech_tokenizer_16k": {
+  "bps": 4,
+  "mel": 0.806,
+  "pesq": 2.131,
+  "stoi": 0.839,
+  "f0corr": 0.844
+ },
+ "sqcodec_16k_0k75bps": {
+  "bps": 0.75,
+  "mel": 4.455,
+  "pesq": 1.04,
+  "stoi": 0.347,
+  "f0corr": 0.453
+ },
+ "sqcodec_16k_12kbps": {
+  "bps": 12,
+  "mel": 4.656,
+  "pesq": 1.164,
+  "stoi": 0.458,
+  "f0corr": 0.281
+ },
+ "sqcodec_16k_1k5bps": {
+  "bps": 1.5,
+  "mel": 4.515,
+  "pesq": 1.05,
+  "stoi": 0.451,
+  "f0corr": 0.38
+ },
+ "sqcodec_16k_3kbps": {
+  "bps": 3,
+  "mel": 3.422,
+  "pesq": 1.243,
+  "stoi": 0.381,
+  "f0corr": 0.334
+ },
+ "sqcodec_16k_6kbps": {
+  "bps": 6,
+  "mel": 4.068,
+  "pesq": 1.427,
+  "stoi": 0.43,
+  "f0corr": 0.272
+ },
+ "sqcodec_24k_12kbps": {
+  "bps": 12,
+  "mel": 4.422,
+  "pesq": 1.189,
+  "stoi": 0.417,
+  "f0corr": 0.239
+ },
+ "sqcodec_24k_24kbps": {
+  "bps": 24,
+  "mel": 4.175,
+  "pesq": 1.04,
+  "stoi": 0.569,
+  "f0corr": 0.353
+ },
+ "unicodec_24k": {
+  "bps": 12,
+  "mel": 0.817,
+  "pesq": 1.902,
+  "stoi": 0.823,
+  "f0corr": 0.768
+ },
+ "wavtokenizer_24k_large_600_4096": {
+  "bps": 0.1,
+  "mel": 1.266,
+  "pesq": 1.492,
+  "stoi": 0.729,
+  "f0corr": 0.741
+ },
+ "wavtokenizer_24k_large_speech_75token": {
+  "bps": 0.1,
+  "mel": 0.729,
+  "pesq": 1.975,
+  "stoi": 0.826,
+  "f0corr": 0.91
+ },
+ "wavtokenizer_24k_medium_600_4096": {
+  "bps": 0.1,
+  "mel": 0.914,
+  "pesq": 1.796,
+  "stoi": 0.793,
+  "f0corr": 0.824
+ },
+ "wavtokenizer_24k_small_600_4096": {
+  "bps": 0.1,
+  "mel": 0.992,
+  "pesq": 1.437,
+  "stoi": 0.738,
+  "f0corr": 0.752
+ }
 };
 export default results;

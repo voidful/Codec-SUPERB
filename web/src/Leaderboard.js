@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTable, useSortBy } from 'react-table';
+import { ChevronUp, ChevronDown, SortAsc } from 'lucide-react';
 import './Leaderboard.css';
 
 const Leaderboard = ({ results }) => {
@@ -7,7 +8,7 @@ const Leaderboard = ({ results }) => {
     return Object.entries(results).map(([key, value]) => ({
       model: key,
       ...Object.keys(value).reduce((acc, curr) => {
-        acc[curr] = parseFloat(value[curr].toFixed(3));
+        acc[curr] = typeof value[curr] === 'number' ? parseFloat(value[curr].toFixed(3)) : value[curr];
         return acc;
       }, {}),
     }));
@@ -23,7 +24,7 @@ const Leaderboard = ({ results }) => {
       ...Object.keys(firstItem).map(key => ({
         Header: key.toUpperCase(),
         accessor: key,
-        sortType: (a, b) => a.original[key] - b.original[key],
+        sortType: 'basic',
       })),
     ];
   }, [results]);
@@ -37,52 +38,51 @@ const Leaderboard = ({ results }) => {
   } = useTable({ columns, data }, useSortBy);
 
   return (
-    <table {...getTableProps()} style={{ border: 'solid 1px #333' }}>
-      <thead>
-        {headerGroups.map(headerGroup => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map(column => (
-              <th
-                {...column.getHeaderProps(column.getSortByToggleProps())}
-                style={{
-                  borderBottom: 'solid 3px #333',
-                  background: '#e0e0e0',
-                  color: 'black',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                }}
-              >
-                {column.render('Header')}
-                <span>
-                  {column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''}
-                </span>
-              </th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-      <tbody {...getTableBodyProps()}>
-        {rows.map(row => {
-          prepareRow(row);
-          return (
-            <tr {...row.getRowProps()}>
-              {row.cells.map(cell => (
-                <td
-                  {...cell.getCellProps()}
-                  style={{
-                    padding: '10px',
-                    border: 'solid 1px #333',
-                    background: '#f9f9f9',
-                  }}
+    <div className="table-container">
+      <table {...getTableProps()}>
+        <thead>
+          {headerGroups.map(headerGroup => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map(column => (
+                <th
+                  {...column.getHeaderProps(column.getSortByToggleProps())}
+                  className={column.isSorted ? 'sorted' : ''}
                 >
-                  {cell.render('Cell')}
-                </td>
+                  <div className="header-content">
+                    {column.render('Header')}
+                    <span className="sort-icon">
+                      {column.isSorted ? (
+                        column.isSortedDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />
+                      ) : (
+                        <SortAsc size={14} className="sort-placeholder" />
+                      )}
+                    </span>
+                  </div>
+                </th>
               ))}
             </tr>
-          );
-        })}
-      </tbody>
-    </table>
+          ))}
+        </thead>
+        <tbody {...getTableBodyProps()}>
+          {rows.map(row => {
+            prepareRow(row);
+            return (
+              <tr {...row.getRowProps()}>
+                {row.cells.map(cell => (
+                  <td {...cell.getCellProps()}>
+                    {cell.column.id === 'model' ? (
+                      <span className="model-name">{cell.render('Cell')}</span>
+                    ) : (
+                      cell.render('Cell')
+                    )}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

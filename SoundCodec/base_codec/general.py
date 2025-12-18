@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import List, Union, Any
 from abc import ABC, abstractmethod
+import uuid
 
 import numpy as np
 import torchaudio
@@ -46,10 +47,18 @@ class BatchExtractedUnit:
         }
 
 
-def save_audio(wav: torch.Tensor, path, sample_rate: int, rescale: bool = False):
+def save_audio(wav: Union[torch.Tensor, np.ndarray], path, sample_rate: int, rescale: bool = False):
+    if sample_rate is None:
+        raise ValueError(f"sample_rate cannot be None when saving audio to {path}")
+    if isinstance(wav, np.ndarray):
+        wav = torch.from_numpy(wav)
+    if wav.ndim == 1:
+        wav = wav.unsqueeze(0)
+    
     folder_path = os.path.dirname(path)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
+    print(f"Saving audio to {path} with sample_rate {sample_rate}")
     limit = 0.99
     max_val = wav.abs().max()
     wav = wav * min(limit / max_val, 1) if rescale else wav.clamp(-limit, limit)
@@ -86,7 +95,8 @@ class BaseCodec(ABC):
         data['unit'] = extracted_unit.unit
         audio_values = self.decode_unit(extracted_unit.stuff_for_synth)
         if local_save:
-            audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+            audio_id = data.get('id', str(uuid.uuid4()))
+            audio_path = f"dummy_{self.setting}/{audio_id}.wav"
             save_audio(audio_values, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
@@ -137,7 +147,8 @@ class BaseCodec(ABC):
         for i, (data, audio_values, unit) in enumerate(zip(data_list, batch_audio_values, batch_extracted_unit.units)):
             data['unit'] = unit
             if local_save:
-                audio_path = f"dummy_{self.setting}/{data['id']}.wav"
+                audio_id = data.get('id', str(uuid.uuid4()))
+                audio_path = f"dummy_{self.setting}/{audio_id}.wav"
                 save_audio(torch.tensor(audio_values), audio_path, self.sampling_rate)
                 data['audio'] = audio_path
             else:

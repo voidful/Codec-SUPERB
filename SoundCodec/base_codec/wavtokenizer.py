@@ -24,7 +24,8 @@ class WavTokenizerBaseCodec(BaseCodec):
         self.model = WavTokenizer.from_pretrained0802(self.config_path, self.ckpt_path)
         self.model.eval()
         self.model = self.model.to(self.device)
-        self.sampling_rate = getattr(self, "sampling_rate", 24000)
+        if self.sampling_rate is None:
+            self.sampling_rate = 24000
 
     def _download_resources(self):
         import os

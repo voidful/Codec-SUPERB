@@ -47,7 +47,9 @@ class FunCodecBaseCodec(BaseCodec):
         data['unit'] = extracted_unit.unit
         audio_array = self.decode_unit(extracted_unit.stuff_for_synth)
         if local_save:
-            audio_path = f"dummy-funcodec-{self.model_name}/{data['id']}.wav"
+            from SoundCodec.base_codec.general import uuid
+            audio_id = data.get('id', str(uuid.uuid4()))
+            audio_path = f"dummy-funcodec-{self.model_name}/{audio_id}.wav"
             save_audio(audio_array, audio_path, self.sampling_rate)
             data['audio'] = audio_path
         else:
