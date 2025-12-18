@@ -41,7 +41,7 @@ def process_entry(args):
         return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None):
     start_time = time.time()  # Start time measurement
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
 
@@ -61,6 +61,10 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         # Process Dataset with Multi-Processing
         args_list = [(original_iter, model_iter, max_duration) for original_iter, model_iter in
                      zip(c['original'], c[model])]
+        
+        if limit is not None:
+            args_list = args_list[:limit]
+
         metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize)
         metrics_results = [metrics for metrics in metrics_results if metrics is not None]
         # Process Dataset END
@@ -111,6 +115,7 @@ if __name__ == "__main__":
                         help='Maximum duration of audio recordings in seconds')
     parser.add_argument('--max_workers', type=int, default=4, help='Number of workers for multi-processing')
     parser.add_argument('--chunksize', type=int, default=10, help='Chunk size for multi-processing')
+    parser.add_argument('--limit', type=int, default=None, help='Limit the number of samples to evaluate')
 
     args = parser.parse_args()
-    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize)
+    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit)

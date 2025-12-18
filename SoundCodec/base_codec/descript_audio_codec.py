@@ -8,12 +8,10 @@ class DACBaseCodec(BaseCodec):
     def __init__(self):
         # Reference: https://github.com/descriptinc/descript-audio-codec
         super().__init__()
-        self.config()
+        import dac
         self.model_path = dac.utils.download(model_type=self.model_type)
         self.model = dac.DAC.load(self.model_path)
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model.to(self.device)
-        self.sampling_rate = self.sampling_rate
 
     def config(self):
         self.model_type = "24khz"
@@ -39,12 +37,16 @@ class DACBaseCodec(BaseCodec):
 
     @torch.no_grad()
     def extract_unit(self, data):
-        wav = torch.tensor(data["audio"]["array"]).unsqueeze(0).to(torch.float32).to(self.device)
-        wav = wav.unsqueeze(0)
+        audio_array = data["audio"]["array"]
+        if len(audio_array.shape) == 1:
+            audio_array = audio_array[None, :]
+        input_signal = AudioSignal(audio_array, self.sampling_rate)
+        input_signal.to(self.device)
+        
         # Encode audio signal as a compressed stream
-        compressed_audio = self.model.compress(wav)
+        compressed_audio = self.model.compress(input_signal)
         # Create discretized representation
-        codes = compressed_audio[0].codes.squeeze(0).permute(1, 0)
+        codes = compressed_audio.codes.squeeze(0).permute(1, 0)
         return ExtractedUnit(
             unit=codes,
             stuff_for_synth=(compressed_audio, True)

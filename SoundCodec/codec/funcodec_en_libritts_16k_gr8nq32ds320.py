@@ -15,3 +15,4 @@ class Codec(FunCodecBaseCodec):
             'https://huggingface.co/alibaba-damo/audio_codec-freqcodec_magphase-en-libritts-16k-gr8nq32ds320-pytorch/resolve/main/model.pth',
             f"funcodec/{self.setting}")
         self.ckpt_path = f"funcodec/{self.setting}/model.pth"
+        super().config()

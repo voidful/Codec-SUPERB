@@ -14,14 +14,33 @@ class UnicodecBaseCodec(BaseCodec):
 
     def _setup_config_and_model(self):
         try:
-            from unicodec.decoder.pretrained import Unicodec
+            # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12)
+            import dataclasses
+            import copy
+            original_get_field = dataclasses._get_field
+            def patched_get_field(cls, name, type, kw_only):
+                val = getattr(cls, name, dataclasses.MISSING)
+                if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
+                    if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
+                        def factory(v=val):
+                            return copy.deepcopy(v)
+                        setattr(cls, name, dataclasses.field(default_factory=factory))
+                return original_get_field(cls, name, type, kw_only)
+            dataclasses._get_field = patched_get_field
+
+            # Monkeypatch fairseq before it initializes hydra
+            import fairseq.dataclass.initialize
+            from unittest.mock import MagicMock
+            fairseq.dataclass.initialize.hydra_init = MagicMock()
+            
+            from unicodec.decoder.pretrained import Unicodec as UniCodec
         except ImportError:
             raise Exception(
                 "Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix"
             )
 
         self._download_resources()
-        self.model = Unicodec.from_pretrained0802(self.config_path, self.ckpt_path)
+        self.model = UniCodec.from_pretrained0802(self.config_path, self.ckpt_path)
         self.model.eval()
         self.model = self.model.to(self.device)
         self.sampling_rate = 24000

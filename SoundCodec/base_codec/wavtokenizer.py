@@ -24,20 +24,63 @@ class WavTokenizerBaseCodec(BaseCodec):
         self.model = WavTokenizer.from_pretrained0802(self.config_path, self.ckpt_path)
         self.model.eval()
         self.model = self.model.to(self.device)
-        self.sampling_rate = 24000
+        self.sampling_rate = getattr(self, "sampling_rate", 24000)
 
     def _download_resources(self):
-        nlp2.download_file(
-            'https://github.com/voidful/WavTokenizer/raw/refs/heads/main/wavtokenizer/configs/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.yaml',
-            'wavtokenizer_model'
-        )
-        self.config_path = "wavtokenizer/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.json"
+        import os
+        from huggingface_hub import hf_hub_download
+        
+        # Determine config path
+        if hasattr(self, "config_repo") and hasattr(self, "config_filename"):
+            self.config_path = hf_hub_download(repo_id=self.config_repo, filename=self.config_filename, local_dir="wavtokenizer_model")
+        elif hasattr(self, "config_url"):
+            nlp2.download_file(self.config_url, 'wavtokenizer_model')
+            self.config_path = f"wavtokenizer_model/{os.path.basename(self.config_url)}"
+        else:
+            # Default
+            nlp2.download_file(
+                'https://raw.githubusercontent.com/voidful/WavTokenizer/master/wavtokenizer/configs/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.yaml',
+                'wavtokenizer_model'
+            )
+            self.config_path = "wavtokenizer_model/wavtokenizer_smalldata_frame40_3s_nq1_code4096_dim512_kmeans200_attn.yaml"
 
-        nlp2.download_file(
-            'https://huggingface.co/novateur/WavTokenizer-large-unify-40token/resolve/main/wavtokenizer_large_unify_600_24k.ckpt',
-            "wavtokenizer_model"
-        )
-        self.ckpt_path = "wavtokenizer/wavtokenizer_large_unify_600_24k.ckpt"
+        # Patch config.yaml class_paths
+        if os.path.exists(self.config_path):
+            with open(self.config_path, "r") as f:
+                import yaml
+                config_data = yaml.safe_load(f)
+
+            patched = False
+
+            def patch_dict(d):
+                nonlocal patched
+                if isinstance(d, dict):
+                    for k, v in d.items():
+                        if k == "class_path" and isinstance(v, str):
+                            if v.startswith("decoder.") or v.startswith("encoder."):
+                                d[k] = "wavtokenizer." + v
+                                patched = True
+                        else:
+                            patch_dict(v)
+                elif isinstance(d, list):
+                    for item in d:
+                        patch_dict(item)
+
+            patch_dict(config_data)
+            if patched:
+                with open(self.config_path, "w") as f:
+                    yaml.dump(config_data, f)
+                print(f"Patched config.yaml class_paths in: {self.config_path}")
+
+        # Determine ckpt path
+        if hasattr(self, "ckpt_repo") and hasattr(self, "ckpt_filename"):
+            self.ckpt_path = hf_hub_download(repo_id=self.ckpt_repo, filename=self.ckpt_filename, local_dir="wavtokenizer_model")
+        elif hasattr(self, "ckpt_url"):
+            nlp2.download_file(self.ckpt_url, 'wavtokenizer_model')
+            self.ckpt_path = f"wavtokenizer_model/{os.path.basename(self.ckpt_url)}"
+        else:
+            # Default
+            self.ckpt_path = hf_hub_download(repo_id="novateur/WavTokenizer-large-unify-40token", filename="wavtokenizer_large_unify_600_24k.ckpt", local_dir="wavtokenizer_model")
 
     @torch.no_grad()
     def extract_unit(self, data):

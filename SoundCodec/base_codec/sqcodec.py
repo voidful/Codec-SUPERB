@@ -10,14 +10,19 @@ import nlp2
 
 
 class SQCodecBaseCodec(BaseCodec):
-    def __init__(self):
-        super().__init__()
 
     def config(self):
-        import sqcodec
-        self.config_name = "1k5bps"
-        self.model = sqcodec.SQCodec.load_model(device=self.device, config_name=self.config_name)
-        self.sampling_rate = self.model.sample_rate
+        try:
+            import sq_codec as sqcodec
+        except:
+            raise Exception("Please install sqcodec first. pip install git+https://github.com/zhai-lw/SQCodec")
+        
+        if not hasattr(self, 'config_name'):
+            self.config_name = "1k5bps"
+        self.sq_codec = sqcodec.get_model(config_name=self.config_name)
+        self.model = self.sq_codec.network
+        self.model.to(self.device)
+        self.sampling_rate = self.sq_codec.config.sample_rate
         self.resample_func = lambda target_sr: T.Resample(orig_freq=target_sr, new_freq=self.sampling_rate)
 
     def extract_unit(self, data_item):

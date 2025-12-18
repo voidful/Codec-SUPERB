@@ -3,4 +3,4 @@ from SoundCodec.base_codec.sqcodec import SQCodecBaseCodec
 
 class Codec(SQCodecBaseCodec):
     def config(self):
-        self.config_name = "24kbps_24khz"
+        self.config_name = "24kbps_24khz"; super().config()
