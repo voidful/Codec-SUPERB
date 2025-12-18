@@ -30,7 +30,8 @@ class SQCodecBaseCodec(BaseCodec):
         wav = torch.tensor(wav, dtype=torch.float32, device=self.device).unsqueeze(0)
 
         with torch.inference_mode():
-            audio_data = self.resample_func(sr)(wav)
+            resampler = self.resample_func(sr).to(self.device)
+            audio_data = resampler(wav)
             audio_data, audio_length = self.model.preprocess(audio_data)
             feature = self.model.encoder(audio_data.unsqueeze(1))
             trans_feature = self.model.en_encoder(feature)
@@ -70,7 +71,8 @@ class SQCodecBaseCodec(BaseCodec):
             wav, sr = data_item["audio"]["array"], data_item["audio"]["sampling_rate"]
             wav = torch.tensor(wav, dtype=torch.float32, device=self.device).unsqueeze(0)
             # Resample if needed
-            audio_data = self.resample_func(sr)(wav)
+            resampler = self.resample_func(sr).to(self.device)
+            audio_data = resampler(wav)
             wav_list.append(audio_data)
             original_lengths.append(audio_data.shape[-1])
         
