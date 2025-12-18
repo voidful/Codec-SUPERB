@@ -15,3 +15,4 @@ class Codec(FunCodecBaseCodec):
             'https://huggingface.co/alibaba-damo/audio_codec-encodec-en-libritts-16k-nq32ds640-pytorch/resolve/main/model.pth',
             f"funcodec/{self.setting}")
         self.ckpt_path = f"funcodec/{self.setting}/model.pth"
+        super().config()

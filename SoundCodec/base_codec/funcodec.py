@@ -20,17 +20,26 @@ class FunCodecBaseCodec(BaseCodec):
         self.config()
 
     def config(self):
-        self.model_name = "alibaba-damo/speech_codec-funcodec_en_libritts_16k_nq32ds320-pytorch"
-        self.sampling_rate = 16000
-        try:
-            from funasr import AutoModel
-        except:
-            raise Exception("Please install funasr first. pip install funasr")
-        self.model = AutoModel(
-            model=self.model_name,
-            trust_remote_code=True,
-            device=self.device,
-        )
+        self.model_name = getattr(self, "model_name", "alibaba-damo/speech_codec-funcodec_en_libritts_16k_nq32ds320-pytorch")
+        self.sampling_rate = getattr(self, "sampling_rate", 16000)
+        
+        if hasattr(self, 'config_path') and hasattr(self, 'ckpt_path'):
+            from funcodec.bin.codec_inference import Speech2Token
+            self.model = Speech2Token(
+                config_file=self.config_path,
+                model_file=self.ckpt_path,
+                device=self.device,
+            )
+        else:
+            try:
+                from funasr import AutoModel
+            except:
+                raise Exception("Please install funasr first. pip install funasr")
+            self.model = AutoModel(
+                model=self.model_name,
+                trust_remote_code=True,
+                device=self.device,
+            )
 
     @torch.no_grad()
     def synth(self, data, local_save=True):
