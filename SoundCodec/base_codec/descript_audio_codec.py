@@ -8,6 +8,9 @@ class DACBaseCodec(BaseCodec):
     def __init__(self):
         # Reference: https://github.com/descriptinc/descript-audio-codec
         super().__init__()
+        # Force CPU if MPS is detected because DAC/audiotools uses float64 which MPS doesn't support
+        if self.device == 'mps':
+             self.device = 'cpu'
         import dac
         self.model_path = dac.utils.download(model_type=self.model_type)
         self.model = dac.DAC.load(self.model_path)
