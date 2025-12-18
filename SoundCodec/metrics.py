@@ -20,29 +20,37 @@ class PESQ(nn.Module):
         super().__init__()
 
     def forward(self, x: AudioSignal, y: AudioSignal, sample_rate: int = 16000):
-        references = x.resample(sample_rate).audio_data.squeeze(0).cpu().numpy()
-        estimates = y.resample(sample_rate).audio_data.squeeze(0).cpu().numpy()
+        try:
+            references = x.resample(sample_rate).audio_data.squeeze(0).cpu().numpy()
+            estimates = y.resample(sample_rate).audio_data.squeeze(0).cpu().numpy()
 
-        if len(references.shape) == 1:
-            references = np.expand_dims(references, axis=0)
-            estimates = np.expand_dims(estimates, axis=0)
+            if len(references.shape) == 1:
+                references = np.expand_dims(references, axis=0)
+                estimates = np.expand_dims(estimates, axis=0)
 
-        pesq_scores = [pesq(sample_rate, ref, est, self.band_type) for ref, est in zip(references, estimates)]
-        return np.mean(pesq_scores)
+            pesq_scores = [pesq(sample_rate, ref, est, self.band_type) for ref, est in zip(references, estimates)]
+            return np.mean(pesq_scores)
+        except Exception:
+            return 1.0
 
 
 class STOI(nn.Module):
     def forward(self, x: AudioSignal, y: AudioSignal, sample_rate: int):
-        references = x.audio_data.squeeze(0).cpu().numpy()
-        estimates = y.audio_data.squeeze(0).cpu().numpy()
+        try:
+            references = x.audio_data.squeeze(0).cpu().numpy()
+            estimates = y.audio_data.squeeze(0).cpu().numpy()
 
-        if len(references.shape) == 1:
-            references = np.expand_dims(references, axis=0)
-            estimates = np.expand_dims(estimates, axis=0)
+            if len(references.shape) == 1:
+                references = np.expand_dims(references, axis=0)
+                estimates = np.expand_dims(estimates, axis=0)
 
-        stoi_scores = [stoi(ref, est, sample_rate) for ref, est in zip(references, estimates)]
-        stoi_scores_clipped = np.clip(stoi_scores, 0.0, 1.0)
-        return np.mean(stoi_scores_clipped)
+            stoi_scores = [stoi(ref, est, sample_rate) for ref, est in zip(references, estimates)]
+            stoi_scores_clipped = np.clip(stoi_scores, 0.0, 1.0)
+            if len(stoi_scores_clipped) == 0 or np.isnan(np.mean(stoi_scores_clipped)):
+                return 0.0
+            return np.mean(stoi_scores_clipped)
+        except Exception:
+            return 0.0
 
 
 class L1Loss(nn.L1Loss):
@@ -415,6 +423,7 @@ def removeSilentFrames(x, y, dyrange, N, K):
     x_sil = np.zeros(np.size(x))
     y_sil = np.zeros(np.size(y))
 
+    jj_o = [0]
     for j in range(np.size(frames)):
         if msk[j]:
             jj_i = np.arange(frames[j], frames[j] + N)
@@ -590,10 +599,15 @@ class F0CorrLoss(torch.nn.Module):
         cfg.pitch_min = self.pitch_min
 
         # Extract F0
-        f0 = self.get_f0_features_using_parselmouth(audio.audio_data[0].cpu().detach().numpy(), cfg)[0]
+        try:
+            f0 = self.get_f0_features_using_parselmouth(audio.audio_data[0].cpu().detach().numpy(), cfg)[0]
+        except Exception:
+            return None
 
         # Subtract mean if needed
         if self.need_mean:
+            if f0 is None or len(f0[f0 != 0]) == 0:
+                return None
             f0 = torch.from_numpy(f0)
             f0 = self.get_pitch_sub_median(f0).numpy()
 
@@ -603,10 +617,13 @@ class F0CorrLoss(torch.nn.Module):
         f0_ref = self.process_audio(audio_ref)
         f0_deg = self.process_audio(audio_deg)
 
+        if f0_ref is None or f0_deg is None:
+            return torch.tensor(0.0)
+
         # Avoid silence
         min_length = min(len(f0_ref), len(f0_deg))
         if min_length <= 1:
-            return torch.tensor(1.0)
+            return torch.tensor(0.0)
 
         # F0 length alignment
         if self.method == "cut":
@@ -614,14 +631,23 @@ class F0CorrLoss(torch.nn.Module):
             f0_ref = f0_ref[:length]
             f0_deg = f0_deg[:length]
         elif self.method == "dtw":
-            _, wp = librosa.sequence.dtw(f0_ref, f0_deg, backtrack=True)
-            f0_ref = np.array([f0_ref[gt_index] for gt_index, _ in wp])
-            f0_deg = np.array([f0_deg[pred_index] for _, pred_index in wp])
+            try:
+                _, wp = librosa.sequence.dtw(f0_ref, f0_deg, backtrack=True)
+                f0_ref = np.array([f0_ref[gt_index] for gt_index, _ in wp])
+                f0_deg = np.array([f0_deg[pred_index] for _, pred_index in wp])
+            except Exception:
+                return torch.tensor(0.0)
 
         # Convert to tensor and calculate Pearson correlation coefficient
         f0_ref = torch.from_numpy(f0_ref).float()
         f0_deg = torch.from_numpy(f0_deg).float()
-        return self.pearson(f0_ref, f0_deg)
+        try:
+            res = self.pearson(f0_ref, f0_deg)
+            if torch.isnan(res):
+                return torch.tensor(0.0)
+            return res
+        except Exception:
+            return torch.tensor(0.0)
 
 
 waveform_loss = L1Loss()
