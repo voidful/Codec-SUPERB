@@ -49,7 +49,7 @@ class AUVBaseCodec(BaseCodec):
         tokens = enc_res["tokens"] # [1, L, Q] or similar
         
         return ExtractedUnit(
-            unit=tokens.squeeze(0),
+            unit=tokens.squeeze(),
             stuff_for_synth=enc_res["quantized"]
         )
 
