@@ -20,13 +20,9 @@ const Leaderboard = ({ results }) => {
     const metrics_keys = ['mel', 'pesq', 'stoi', 'f0corr'];
 
     const colGroups = [
-      {
-        Header: 'Model Info',
-        columns: [
-          { Header: 'Model', accessor: 'model' },
-          { Header: 'BPS', accessor: 'bps' }
-        ]
-      }
+      { Header: 'Model', accessor: 'model' },
+      { Header: 'BPS', accessor: 'bps' },
+      { Header: 'TPS (approx.)', accessor: 'tps' }
     ];
 
     categories.forEach(cat => {

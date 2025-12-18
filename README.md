@@ -284,6 +284,34 @@ If you use this code or result in your paper, please cite our work as:
     pages = "10330--10348",
 }
 ```
+## Benchmarking and Leaderboard Contribution
+
+We use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset for standard benchmarking.
+
+### Steps to Evaluate a Codec
+
+1.  **Synthesize the Dataset**:
+    Run `dataset_creator.py` to synthesize the test set with your desired codec.
+    ```bash
+    python3 dataset_creator.py --dataset voidful/codec-superb-tiny
+    ```
+    *Note: This will process all available codecs by default. To limit to a specific codec, you can modify the script or use a custom filter.*
+
+2.  **Calculate Metrics**:
+    Run `benchmarking.py` to compute metrics (MEL, PESQ, STOI, F0Corr) for the synthesized audio.
+    ```bash
+    python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+    ```
+
+3.  **Submit Results**:
+    After benchmarking, a result file named `datasets_voidful_codec-superb-tiny_synth_evaluation_results_*.json` will be generated in the project root.
+    
+    To contribute your results to the leaderboard:
+    - Open a **New Issue** in this repository.
+    - Title it "New Benchmark Result: [Codec Name]".
+    - Attach the generated JSON file or paste its content.
+    - The maintainers will verify and merge your results into the official leaderboard.
+
 ## Contribution
 
 Contributions are highly encouraged, whether it's through adding new codec models, expanding the dataset collection, or

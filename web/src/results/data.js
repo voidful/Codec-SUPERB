@@ -1,6 +1,7 @@
 const results = {
  "academicodec_hifi_16k_320d": {
   "bps": 2,
+  "tps": 50,
   "music_mel": 1.226,
   "music_pesq": 2.168,
   "music_stoi": 0.755,
@@ -19,7 +20,8 @@ const results = {
   "speech_f0corr": 0.866
  },
  "audiodec_24k_320d": {
-  "bps": 6.4,
+  "bps": 6,
+  "tps": 75,
   "music_mel": 0.858,
   "music_pesq": 1.823,
   "music_stoi": 0.685,
@@ -39,6 +41,7 @@ const results = {
  },
  "encodec_24k_12bps": {
   "bps": 12,
+  "tps": 75,
   "music_mel": 0.958,
   "music_pesq": 2.915,
   "music_stoi": 0.91,
@@ -58,6 +61,7 @@ const results = {
  },
  "funcodec_zh_en_16k_nq32ds320": {
   "bps": 16,
+  "tps": 50,
   "music_mel": 1.182,
   "music_pesq": 2.433,
   "music_stoi": 0.881,
@@ -76,7 +80,8 @@ const results = {
   "speech_f0corr": 0.967
  },
  "wavtokenizer_24k_small_600_4096": {
-  "bps": 0.1,
+  "bps": 0.48,
+  "tps": 40,
   "music_mel": 1.097,
   "music_pesq": 1.534,
   "music_stoi": 0.625,

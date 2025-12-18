@@ -4,6 +4,10 @@
   /* Colors - Modern Dark Theme */
   --bg-color: #0c0e12;
   --surface-color: rgba(255, 255, 255, 0.05);
+  --surface-color-opaque: #181A1E;
+  /* Solid version for sticky elements */
+  --surface-hover-opaque: #1D1F23;
+  /* Solid version for sticky hover */
   --surface-border: rgba(255, 255, 255, 0.1);
   --primary-color: #6366f1;
   --primary-glow: rgba(99, 102, 241, 0.5);
@@ -11,18 +15,18 @@
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --accent-color: #38bdf8;
-  
+
   /* Spacing */
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 2rem;
-  
+
   /* Glassmorphism */
   --glass-bg: rgba(23, 25, 30, 0.7);
   --glass-blur: blur(12px);
   --glass-border: 1px solid rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
+
   /* Transitions */
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);

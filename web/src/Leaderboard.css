@@ -4,6 +4,25 @@
   border-radius: 12px;
   background: var(--surface-color);
   border: 1px solid var(--surface-border);
+
+  /* Custom Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) var(--surface-color);
+}
+
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: var(--surface-color);
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 4px;
+  border: 2px solid var(--surface-color);
 }
 
 table {
@@ -24,6 +43,16 @@ th {
   cursor: pointer;
   transition: var(--transition-fast);
   white-space: nowrap;
+}
+
+/* Sticky Header for First Column (Model) */
+th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--surface-color-opaque);
+  /* Opaque background */
+  border-right: 1px solid var(--surface-border);
 }
 
 thead tr:first-child th {
@@ -73,11 +102,34 @@ td {
   font-size: 0.9375rem;
   color: var(--text-primary);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
   transition: var(--transition-fast);
+}
+
+td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface-color-opaque);
+  /* Opaque background */
+  border-right: 1px solid var(--surface-border);
+}
+
+/* Ensure BPS and TPS are left aligned */
+td:nth-child(2),
+td:nth-child(3) {
+  text-align: left;
 }
 
 tr:hover td {
   background: rgba(255, 255, 255, 0.02);
+}
+
+tr:hover td:first-child {
+  background: var(--surface-hover-opaque);
+  /* Opaque hover for sticky */
 }
 
 tr:last-child td {
