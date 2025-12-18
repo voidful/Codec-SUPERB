@@ -1,7 +1,15 @@
 import json
 
-# Load benchmark results
-with open('._datasets_voidful_codec-superb-tiny_synth_evaluation_results_20251218_204458.json', 'r') as f:
+import glob
+import os
+
+# Load latest benchmark results
+json_files = glob.glob('*codec-superb-tiny_synth_evaluation_results*.json')
+if not json_files:
+    raise FileNotFoundError("No benchmark results found.")
+latest_file = max(json_files, key=os.path.getmtime)
+print(f"Loading results from {latest_file}")
+with open(latest_file, 'r') as f:
     benchmark_results = json.load(f)
 
 # Hardcoded BPS mapping (bitrate in kbps or as used in data.js)
@@ -47,16 +55,32 @@ metrics_to_include = ['mel', 'pesq', 'stoi', 'f0corr']
 
 new_results = {}
 
-for model_name, metrics in benchmark_results.items():
+new_results = {}
+
+for model_name, metrics_data in benchmark_results.items():
     entry = {
         'bps': bps_mapping.get(model_name, 0)
     }
-    for m in metrics_to_include:
-        val = metrics.get(m, 0)
-        # Handle NaN
-        if val != val: # NaN check
-            val = 0
-        entry[m] = round(float(val), 3)
+    
+    # Check if nested by category
+    is_nested = any(isinstance(v, dict) for v in metrics_data.values())
+    
+    if is_nested:
+        for category, metrics in metrics_data.items():
+            for m in metrics_to_include:
+                val = metrics.get(m, 0)
+                if val != val: # NaN check
+                    val = 0
+                entry[f"{category.lower()}_{m}"] = round(float(val), 3)
+    else:
+        # Legacy format: metrics_data is {metric: value}
+        # Map to 'overall' category by default
+        for m in metrics_to_include:
+            val = metrics_data.get(m, 0)
+            if val != val: # NaN check
+                val = 0
+            entry[f"overall_{m}"] = round(float(val), 3)
+            
     new_results[model_name] = entry
 
 # Format as JavaScript

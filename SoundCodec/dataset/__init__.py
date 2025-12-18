@@ -8,12 +8,12 @@ def load_dataset(dataset_name):
         # Fallback to loading from Hugging Face Hub
         ds = hf_load_dataset(dataset_name)
         if isinstance(ds, dict):
-            if "test" in ds:
-                return ds["test"]
-            if "validation" in ds:
-                return ds["validation"]
-            if "train" in ds:
-                return ds["train"]
-            # return the first split if none of the above are found
-            return ds[list(ds.keys())[0]]
+            from datasets import concatenate_datasets
+            all_ds = []
+            for split_name, split_ds in ds.items():
+                # Add category column if it doesn't exist
+                if 'category' not in split_ds.column_names:
+                    split_ds = split_ds.add_column('category', [split_name] * len(split_ds))
+                all_ds.append(split_ds)
+            return concatenate_datasets(all_ds).shuffle(seed=42)
         return ds

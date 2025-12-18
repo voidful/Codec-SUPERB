@@ -16,17 +16,41 @@ const Leaderboard = ({ results }) => {
 
   const columns = React.useMemo(() => {
     const firstItem = results[Object.keys(results)[0]];
-    return [
+    const categories = ['Speech', 'Audio', 'Music', 'Overall'];
+    const metrics_keys = ['mel', 'pesq', 'stoi', 'f0corr'];
+
+    const colGroups = [
       {
-        Header: 'Model',
-        accessor: 'model',
-      },
-      ...Object.keys(firstItem).map(key => ({
-        Header: key.toUpperCase(),
-        accessor: key,
-        sortType: 'basic',
-      })),
+        Header: 'Model Info',
+        columns: [
+          { Header: 'Model', accessor: 'model' },
+          { Header: 'BPS', accessor: 'bps' }
+        ]
+      }
     ];
+
+    categories.forEach(cat => {
+      const catColumns = metrics_keys.map(m => {
+        const key = `${cat.toLowerCase()}_${m}`;
+        if (key in firstItem || true) { // Force inclusion or check existence
+          return {
+            Header: m.toUpperCase(),
+            accessor: key,
+            sortType: 'basic',
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (catColumns.length > 0) {
+        colGroups.push({
+          Header: cat.toUpperCase(),
+          columns: catColumns
+        });
+      }
+    });
+
+    return colGroups;
   }, [results]);
 
   const {

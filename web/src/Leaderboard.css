@@ -20,9 +20,21 @@ th {
   font-weight: 600;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--surface-border);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: var(--transition-fast);
   white-space: nowrap;
+}
+
+thead tr:first-child th {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
 }
 
 th:hover {
