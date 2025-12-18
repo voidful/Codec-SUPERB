@@ -24,7 +24,6 @@ funcodec/
 speechtokenizer_hubert_avg/
 
 # Testing/Tools
-check_all_codecs.py
 test_imports.py
 test_imports_detailed.py
 benchmarking.py
