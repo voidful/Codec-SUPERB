@@ -3,6 +3,7 @@ from datasets import DatasetDict, Audio, load_from_disk
 from SoundCodec.codec import load_codec, list_codec
 from SoundCodec.dataset import load_dataset
 from SoundCodec.dataset.general import apply_audio_cast, extract_unit
+import numpy as np
 
 
 def run_experiment(dataset_name):
@@ -32,6 +33,22 @@ def run_experiment(dataset_name):
         except:
             pass
         codec = load_codec(codec_name)
+        if args.only_1d:
+            dummy_data = {
+                "audio": {
+                    "array": np.zeros(16000),
+                    "sampling_rate": 16000
+                }
+            }
+            try:
+                extracted_unit = codec.extract_unit(dummy_data)
+                if extracted_unit.unit.ndim != 1:
+                    print(f"Skipping {codec_name} because it is not 1D (ndim={extracted_unit.unit.ndim})")
+                    continue
+            except Exception as e:
+                print(f"Skipping {codec_name} due to extraction error during 1D check: {e}")
+                continue
+
         synthesized_dataset = apply_audio_cast(cleaned_dataset, codec.sampling_rate)
         if args.extract_unit_only == 'extract_unit':
             synthesized_dataset = synthesized_dataset.map(extract_unit, fn_kwargs={'extract_unit_class': codec})
@@ -70,5 +87,6 @@ if __name__ == "__main__":
     parser.add_argument('--push_to_hub', required=False, action='store_true')
     parser.add_argument('--upload_name', required=False, default='Codec-SUPERB')
     parser.add_argument('--limit', required=False, type=int, default=None)
+    parser.add_argument('--only_1d', required=False, action='store_true')
     args = parser.parse_args()
     run_experiment(args.dataset)
