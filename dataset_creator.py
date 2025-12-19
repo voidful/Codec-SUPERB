@@ -1,9 +1,30 @@
 import argparse
 from datasets import DatasetDict, Audio, load_from_disk
+import datasets
 from SoundCodec.codec import load_codec, list_codec
 from SoundCodec.dataset import load_dataset
 from SoundCodec.dataset.general import apply_audio_cast, extract_unit
 import numpy as np
+import io
+import soundfile as sf
+
+
+def get_duration(x):
+    try:
+        audio_entry = x['audio']
+        if isinstance(audio_entry, dict):
+            audio_bytes = audio_entry.get('bytes')
+            path = audio_entry.get('path')
+            if audio_bytes:
+                with io.BytesIO(audio_bytes) as f:
+                    info = sf.info(f)
+                    return info.duration
+            elif path:
+                info = sf.info(path)
+                return info.duration
+        return 0
+    except Exception:
+        return 0
 
 
 def run_experiment(dataset_name):
@@ -11,9 +32,16 @@ def run_experiment(dataset_name):
     if args.limit:
         cleaned_dataset = cleaned_dataset.select(range(min(args.limit, len(cleaned_dataset))))
     
+    # Disable automatic decoding to avoid C++ backend crashes during mass filtering
+    cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(decode=False))
+    
     print("before filter duration", cleaned_dataset)
     cleaned_dataset = cleaned_dataset.filter(
-        lambda x: len(x['audio']['array']) / x['audio']['sampling_rate'] <= args.max_duration)
+        lambda x: get_duration(x) <= args.max_duration)
+    
+    # Re-enable decoding
+    cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(decode=True))
+    
     print("after filter duration", cleaned_dataset)
     
     d_item = next(iter(cleaned_dataset))
