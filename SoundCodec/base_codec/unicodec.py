@@ -13,9 +13,9 @@ class UnicodecBaseCodec(BaseCodec):
         self._setup_config_and_model()
 
     def _setup_config_and_model(self):
-        # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12)
+        # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12+)
         import sys
-        if sys.version_info[:2] == (3, 12):
+        if sys.version_info[:2] >= (3, 12):
             import dataclasses
             import copy
             original_get_field = dataclasses._get_field
