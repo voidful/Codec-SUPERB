@@ -41,6 +41,9 @@ def run_experiment(dataset_name):
             print(f"Error loading codec {codec_name}: {e}")
             continue
             try:
+                if "sqcodec" in codec_name:
+                    print(f"Skipping {codec_name} because it is treated as not 1D (exception)")
+                    continue
                 if not codec.is_1d() and "auv" not in codec_name:
                     print(f"Skipping {codec_name} because it is not 1D")
                     continue
