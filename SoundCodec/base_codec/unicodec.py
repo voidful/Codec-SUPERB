@@ -20,6 +20,10 @@ class UnicodecBaseCodec(BaseCodec):
         def patched_get_field(cls, name, type, kw_only):
             val = getattr(cls, name, dataclasses.MISSING)
             if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
+                # Skip sentinel types (e.g., _UNPAGED_TYPE, _MISSING_TYPE)
+                val_type_name = type(val).__name__
+                if val_type_name.startswith('_') and val_type_name.endswith('_TYPE'):
+                    return original_get_field(cls, name, type, kw_only)
                 if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
                     def factory(v=val):
                         try:
