@@ -56,13 +56,28 @@ def save_audio(wav: Union[torch.Tensor, np.ndarray], path, sample_rate: int, res
         wav = wav.unsqueeze(0)
     
     folder_path = os.path.dirname(path)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    print(f"Saving audio to {path} with sample_rate {sample_rate}")
+    if folder_path and not os.path.exists(folder_path):
+        os.makedirs(folder_path, exist_ok=True)
+    
+    # Handle potentially empty or zero-length tensors gracefully
+    if wav.numel() == 0:
+        print(f"Warning: Attempting to save empty audio to {path}. Skipping.")
+        return
+
+    print(f"Saving audio to {path} with sample_rate {sample_rate}, shape {wav.shape}")
     limit = 0.99
-    max_val = wav.abs().max()
-    wav = wav * min(limit / max_val, 1) if rescale else wav.clamp(-limit, limit)
-    torchaudio.save(str(path), wav, sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
+    try:
+        max_val = wav.abs().max()
+        if max_val > 0:
+            wav = wav * min(limit / max_val, 1) if rescale else wav.clamp(-limit, limit)
+        else:
+            # Silence
+            pass
+        torchaudio.save(str(path), wav, sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
+    except Exception as e:
+        print(f"Error saving audio to {path}: {e}")
+        # Re-raise to catch in higher level if needed, or just warn
+        raise
 
 
 class BaseCodec(ABC):
