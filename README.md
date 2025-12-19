@@ -238,6 +238,10 @@ python -m pytest SoundCodec/test/test_batch_processing.py -v
 
 # Run performance benchmarks
 python SoundCodec/test/benchmark_batch_performance.py
+
+# Verify all codecs (Initialization, Synthesis, and 1D detection)
+# We highly encourage using this tool to verify your environment and codec functionality.
+python3 check_all_codecs.py
 ```
 
 ## Citation
