@@ -14,26 +14,26 @@ class UnicodecBaseCodec(BaseCodec):
 
     def _setup_config_and_model(self):
         # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12)
-            import dataclasses
-            import copy
-            original_get_field = dataclasses._get_field
-            def patched_get_field(cls, name, type, kw_only):
-                val = getattr(cls, name, dataclasses.MISSING)
-                if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
-                    if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
-                        def factory(v=val):
-                            try:
-                                return copy.deepcopy(v)
-                            except Exception:
-                                return v
-                        setattr(cls, name, dataclasses.field(default_factory=factory))
-                return original_get_field(cls, name, type, kw_only)
-            dataclasses._get_field = patched_get_field
+        import dataclasses
+        import copy
+        original_get_field = dataclasses._get_field
+        def patched_get_field(cls, name, type, kw_only):
+            val = getattr(cls, name, dataclasses.MISSING)
+            if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
+                if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
+                    def factory(v=val):
+                        try:
+                            return copy.deepcopy(v)
+                        except Exception:
+                            return v
+                    setattr(cls, name, dataclasses.field(default_factory=factory))
+            return original_get_field(cls, name, type, kw_only)
+        dataclasses._get_field = patched_get_field
 
-            # Monkeypatch fairseq before it initializes hydra
-            import fairseq.dataclass.initialize
-            from unittest.mock import MagicMock
-            fairseq.dataclass.initialize.hydra_init = MagicMock()
+        # Monkeypatch fairseq before it initializes hydra
+        import fairseq.dataclass.initialize
+        from unittest.mock import MagicMock
+        fairseq.dataclass.initialize.hydra_init = MagicMock()
         try:
             from unicodec.decoder.pretrained import Unicodec as UniCodec
         except Exception as e:
