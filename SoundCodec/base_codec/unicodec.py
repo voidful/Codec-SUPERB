@@ -28,15 +28,19 @@ class UnicodecBaseCodec(BaseCodec):
                         return original_get_field(cls, name, type, kw_only)
                     
                     # Skip typing module objects (Any, Union, etc.)
+                    # Check both module and typing-specific attributes
                     val_module = getattr(type(val), '__module__', '')
-                    if val_module == 'typing':
+                    if val_module == 'typing' or hasattr(val, '__origin__') or hasattr(val, '__args__'):
                         return original_get_field(cls, name, type, kw_only)
                     
                     if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
                         def factory(v=val):
                             try:
                                 return copy.deepcopy(v)
-                            except Exception:
+                            except (TypeError, AttributeError) as e:
+                                # If deepcopy fails (e.g., for typing objects), return original
+                                if 'cannot be instantiated' in str(e).lower() or 'cannot instantiate' in str(e).lower():
+                                    return v
                                 return v
                         setattr(cls, name, dataclasses.field(default_factory=factory))
                 return original_get_field(cls, name, type, kw_only)
