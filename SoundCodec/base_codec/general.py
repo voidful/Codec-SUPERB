@@ -64,7 +64,6 @@ def save_audio(wav: Union[torch.Tensor, np.ndarray], path, sample_rate: int, res
         print(f"Warning: Attempting to save empty audio to {path}. Skipping.")
         return
 
-    print(f"Saving audio to {path} with sample_rate {sample_rate}, shape {wav.shape}, dtype {wav.dtype}")
     
     # Move to CPU immediately to avoid GPU-related C++ errors in backends
     wav = wav.detach().cpu()
