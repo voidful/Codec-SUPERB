@@ -40,6 +40,8 @@ def run_experiment(dataset_name):
                 continue
             print(f"Error loading codec {codec_name}: {e}")
             continue
+
+        if args.only_1d:
             try:
                 if "sqcodec" in codec_name:
                     print(f"Skipping {codec_name} because it is treated as not 1D (exception)")
