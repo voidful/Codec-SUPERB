@@ -306,7 +306,7 @@ def stoi(x, y, fs_signal):
         alpha = np.sqrt(
             np.divide(
                 np.sum(np.square(X_seg), axis=1, keepdims=True),
-                np.sum(np.square(Y_seg), axis=1, keepdims=True),
+                np.sum(np.square(Y_seg), axis=1, keepdims=True) + 1e-10,
             )
         )
         # obtain \alpha*Y_j(n) from Eq.(2) [1]
@@ -417,7 +417,7 @@ def removeSilentFrames(x, y, dyrange, N, K):
     for j in range(np.size(frames)):
         jj_list[j, :] = np.arange(frames[j] - 1, frames[j] + N - 1)
 
-    msk = 20 * np.log10(np.divide(norm(np.multiply(x[jj_list], w), axis=1), np.sqrt(N)))
+    msk = 20 * np.log10(np.divide(norm(np.multiply(x[jj_list], w), axis=1), np.sqrt(N)) + 1e-10)
 
     msk = (msk - np.max(msk) + dyrange) > 0
     count = 0
@@ -445,9 +445,9 @@ def taa_corr(x, y):
     vectors x and y. Gives same results as 'corr' from statistics toolbox.
     """
     xn = np.subtract(x, np.mean(x, axis=1, keepdims=True))
-    xn = np.divide(xn, norm(xn, axis=1, keepdims=True))
+    xn = np.divide(xn, norm(xn, axis=1, keepdims=True) + 1e-10)
     yn = np.subtract(y, np.mean(y, axis=1, keepdims=True))
-    yn = np.divide(yn, norm(yn, axis=1, keepdims=True))
+    yn = np.divide(yn, norm(yn, axis=1, keepdims=True) + 1e-10)
     rho = np.trace(np.matmul(xn, np.transpose(yn)))
 
     return rho
