@@ -31,8 +31,13 @@ class UnicodecBaseCodec(BaseCodec):
         dataclasses._get_field = patched_get_field
 
         # Monkeypatch fairseq before it initializes hydra
-        import fairseq.dataclass.initialize
+        import sys
         from unittest.mock import MagicMock
+        
+        # Suppress ANTLR parser import errors
+        sys.modules['fairseq.dataclass.utils'] = MagicMock()
+        
+        import fairseq.dataclass.initialize
         fairseq.dataclass.initialize.hydra_init = MagicMock()
         try:
             from unicodec.decoder.pretrained import Unicodec as UniCodec
