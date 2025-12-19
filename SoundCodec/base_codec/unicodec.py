@@ -14,31 +14,33 @@ class UnicodecBaseCodec(BaseCodec):
 
     def _setup_config_and_model(self):
         # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12)
-        import dataclasses
-        import copy
-        original_get_field = dataclasses._get_field
-        def patched_get_field(cls, name, type, kw_only):
-            val = getattr(cls, name, dataclasses.MISSING)
-            if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
-                # Skip sentinel types (e.g., _UNPAGED_TYPE, _MISSING_TYPE)
-                val_type_name = type(val).__name__
-                if val_type_name.startswith('_') and val_type_name.endswith('_TYPE'):
-                    return original_get_field(cls, name, type, kw_only)
-                
-                # Skip typing module objects (Any, Union, etc.)
-                val_module = getattr(type(val), '__module__', '')
-                if val_module == 'typing':
-                    return original_get_field(cls, name, type, kw_only)
-                
-                if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
-                    def factory(v=val):
-                        try:
-                            return copy.deepcopy(v)
-                        except Exception:
-                            return v
-                    setattr(cls, name, dataclasses.field(default_factory=factory))
-            return original_get_field(cls, name, type, kw_only)
-        dataclasses._get_field = patched_get_field
+        import sys
+        if sys.version_info[:2] == (3, 12):
+            import dataclasses
+            import copy
+            original_get_field = dataclasses._get_field
+            def patched_get_field(cls, name, type, kw_only):
+                val = getattr(cls, name, dataclasses.MISSING)
+                if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
+                    # Skip sentinel types (e.g., _UNPAGED_TYPE, _MISSING_TYPE)
+                    val_type_name = type(val).__name__
+                    if val_type_name.startswith('_') and val_type_name.endswith('_TYPE'):
+                        return original_get_field(cls, name, type, kw_only)
+                    
+                    # Skip typing module objects (Any, Union, etc.)
+                    val_module = getattr(type(val), '__module__', '')
+                    if val_module == 'typing':
+                        return original_get_field(cls, name, type, kw_only)
+                    
+                    if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
+                        def factory(v=val):
+                            try:
+                                return copy.deepcopy(v)
+                            except Exception:
+                                return v
+                        setattr(cls, name, dataclasses.field(default_factory=factory))
+                return original_get_field(cls, name, type, kw_only)
+            dataclasses._get_field = patched_get_field
 
         # Monkeypatch fairseq before it initializes hydra
         import sys
