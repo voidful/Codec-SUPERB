@@ -31,7 +31,10 @@ class UnicodecBaseCodec(BaseCodec):
                     # Check both the value's module and its type's module
                     val_module = getattr(val, '__module__', '')
                     val_type_module = getattr(type(val), '__module__', '')
-                    if val_module == 'typing' or val_type_module == 'typing' or hasattr(val, '__origin__') or hasattr(val, '__args__'):
+                    val_str = str(val)
+                    if (val_module == 'typing' or val_type_module == 'typing' or 
+                        hasattr(val, '__origin__') or hasattr(val, '__args__') or
+                        'typing.' in val_str or val_str == 'Any'):
                         return original_get_field(cls, name, type, kw_only)
                     
                     if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
@@ -60,9 +63,9 @@ class UnicodecBaseCodec(BaseCodec):
             from unicodec.decoder.pretrained import Unicodec as UniCodec
         except Exception as e:
             import traceback
-            traceback.print_exc()
+            tb = traceback.format_exc()
             raise Exception(
-                f"Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix. Error: {e}"
+                f"Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix. Error: {e}\nTraceback:\n{tb}"
             )
 
         self._download_resources()
