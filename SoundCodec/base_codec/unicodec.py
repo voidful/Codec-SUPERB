@@ -23,7 +23,10 @@ class UnicodecBaseCodec(BaseCodec):
                 if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
                     if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
                         def factory(v=val):
-                            return copy.deepcopy(v)
+                            try:
+                                return copy.deepcopy(v)
+                            except Exception:
+                                return v
                         setattr(cls, name, dataclasses.field(default_factory=factory))
                 return original_get_field(cls, name, type, kw_only)
             dataclasses._get_field = patched_get_field
