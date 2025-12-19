@@ -2,6 +2,10 @@ from SoundCodec.base_codec.unicodec import UnicodecBaseCodec
 import nlp2
 
 class Codec(UnicodecBaseCodec):
+    def config(self):
+        self.setting = "unicodec_24k"
+        super().config()
+
     def _download_resources(self):
         nlp2.download_file(
             'https://huggingface.co/Yidiii/UniCodec_ckpt/resolve/main/unicode.ckpt',
