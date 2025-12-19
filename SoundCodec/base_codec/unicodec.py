@@ -34,9 +34,9 @@ class UnicodecBaseCodec(BaseCodec):
             fairseq.dataclass.initialize.hydra_init = MagicMock()
             
             from unicodec.decoder.pretrained import Unicodec as UniCodec
-        except ImportError:
+        except Exception as e:
             raise Exception(
-                "Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix"
+                f"Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix. Error: {e}"
             )
 
         self._download_resources()
