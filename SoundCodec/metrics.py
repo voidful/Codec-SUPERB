@@ -130,7 +130,7 @@ class SISDRLoss(nn.Module):
             sdr = sdr.mean()
         elif self.reduction == "sum":
             sdr = sdr.sum()
-        return sdr
+        return sdr.item()
 
 
 class MultiScaleSTFTLoss(nn.Module):
@@ -245,7 +245,7 @@ class SignalToNoiseRatioLoss(nn.Module):
 
         noise = x_audio - y_audio
         snr = 10 * torch.log10(torch.sum(x_audio ** 2) / torch.sum(noise ** 2))
-        return self.weight * snr
+        return (self.weight * snr).item()
 
 
 def stoi(x, y, fs_signal):
