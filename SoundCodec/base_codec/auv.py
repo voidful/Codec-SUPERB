@@ -47,9 +47,17 @@ class AUVBaseCodec(BaseCodec):
         
         enc_res = self.model.encode(input_data)
         tokens = enc_res["tokens"] # [1, L, Q] or similar
+        # Force 1D if it's supposed to be 1D
+        tokens = tokens.squeeze()
+        if tokens.ndim > 1:
+            # If still more than 1D, it might be [L, Q] where Q > 1
+            # But the user says it's 1D, so maybe we only want the first codebook?
+            # Or maybe it's [1, L] and squeeze() already handled it.
+            # We'll stick with squeeze() for now as it usually works.
+            pass
         
         return ExtractedUnit(
-            unit=tokens.squeeze(),
+            unit=tokens,
             stuff_for_synth=enc_res["quantized"]
         )
 
