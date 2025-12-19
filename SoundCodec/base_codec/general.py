@@ -73,10 +73,20 @@ def save_audio(wav: Union[torch.Tensor, np.ndarray], path, sample_rate: int, res
         else:
             # Silence
             pass
-        torchaudio.save(str(path), wav, sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
+        
+        # Fallback to scipy to avoid torchaudio C++ backend issues on some systems
+        try:
+            from scipy.io import wavfile
+            # scipy expects [Time, Channels] or [Time] for mono
+            audio_out = wav.squeeze().cpu().numpy()
+            # Ensure it's 16-bit PCM for consistency
+            audio_int16 = (audio_out * 32767).astype(np.int16)
+            wavfile.write(str(path), sample_rate, audio_int16)
+        except ImportError:
+            # If scipy not available, try torchaudio as last resort
+            torchaudio.save(str(path), wav.cpu(), sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
     except Exception as e:
         print(f"Error saving audio to {path}: {e}")
-        # Re-raise to catch in higher level if needed, or just warn
         raise
 
 
