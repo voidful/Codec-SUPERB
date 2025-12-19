@@ -24,6 +24,12 @@ class UnicodecBaseCodec(BaseCodec):
                 val_type_name = type(val).__name__
                 if val_type_name.startswith('_') and val_type_name.endswith('_TYPE'):
                     return original_get_field(cls, name, type, kw_only)
+                
+                # Skip typing module objects (Any, Union, etc.)
+                val_module = getattr(type(val), '__module__', '')
+                if val_module == 'typing':
+                    return original_get_field(cls, name, type, kw_only)
+                
                 if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
                     def factory(v=val):
                         try:
