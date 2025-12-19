@@ -94,6 +94,26 @@ class BaseCodec(ABC):
         """Decode units back to audio for a single sample."""
         pass
     
+    def is_1d(self):
+        """Identify whether the codec produces 1D tokens using a dummy extraction."""
+        dummy_data = {
+            "audio": {
+                "array": np.zeros(16000),
+                "sampling_rate": 16000
+            }
+        }
+        try:
+            extracted_unit = self.extract_unit(dummy_data)
+            unit = extracted_unit.unit
+            if hasattr(unit, 'squeeze'):
+                unit = unit.squeeze()
+            
+            # Check for effective ndim (dimensions with size > 1)
+            effective_ndim = len([d for d in unit.shape if d > 1])
+            return effective_ndim <= 1
+        except Exception:
+            return False
+
     def synth(self, data, local_save=True):
         """Synthesize audio from data for a single sample."""
         extracted_unit = self.extract_unit(data)

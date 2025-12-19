@@ -40,30 +40,12 @@ def run_experiment(dataset_name):
                 continue
             print(f"Error loading codec {codec_name}: {e}")
             continue
-        if args.only_1d:
-            dummy_data = {
-                "audio": {
-                    "array": np.zeros(16000),
-                    "sampling_rate": 16000
-                }
-            }
             try:
-                extracted_unit = codec.extract_unit(dummy_data)
-                unit = extracted_unit.unit
-                if hasattr(unit, 'squeeze'):
-                    unit = unit.squeeze()
-                
-                # Check for effective ndim (dimensions with size > 1)
-                effective_ndim = len([d for d in unit.shape if d > 1])
-                
-                if effective_ndim > 1 and "auv" not in codec_name:
-                    print(f"Skipping {codec_name} because it is not 1D (effective_ndim={effective_ndim}, shape={unit.shape})")
+                if not codec.is_1d() and "auv" not in codec_name:
+                    print(f"Skipping {codec_name} because it is not 1D")
                     continue
-                elif effective_ndim > 1 and "auv" in codec_name:
-                    print(f"Forcing {codec_name} to be treated as 1D despite effective_ndim={effective_ndim}")
-                elif effective_ndim == 0:
-                     # Scalar case? 
-                     pass
+                elif not codec.is_1d() and "auv" in codec_name:
+                    print(f"Forcing {codec_name} to be treated as 1D")
             except Exception as e:
                 print(f"Skipping {codec_name} due to extraction error during 1D check: {e}")
                 continue
