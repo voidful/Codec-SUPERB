@@ -29,7 +29,7 @@ class PESQ(nn.Module):
                 estimates = np.expand_dims(estimates, axis=0)
 
             pesq_scores = [pesq(sample_rate, ref, est, self.band_type) for ref, est in zip(references, estimates)]
-            return np.mean(pesq_scores)
+            return float(np.mean(pesq_scores))
         except Exception:
             return 1.0
 
@@ -48,7 +48,7 @@ class STOI(nn.Module):
             stoi_scores_clipped = np.clip(stoi_scores, 0.0, 1.0)
             if len(stoi_scores_clipped) == 0 or np.isnan(np.mean(stoi_scores_clipped)):
                 return 0.0
-            return np.mean(stoi_scores_clipped)
+            return float(np.mean(stoi_scores_clipped))
         except Exception:
             return 0.0
 
@@ -316,10 +316,12 @@ def stoi(x, y, fs_signal):
         # obtain correlation coeffecient from Eq.(4) [1]
         d_interm[m - N + 1] = taa_corr(X_seg, Y_prime) / J
 
+    if len(d_interm) == 0:
+        return 0.0
     d = (
         d_interm.mean()
     )  # combine all intermediate intelligibility measures as in Eq.(4) [1]
-    return d
+    return float(d)
 
 
 def stdft(x, N, K, N_fft):
@@ -618,12 +620,12 @@ class F0CorrLoss(torch.nn.Module):
         f0_deg = self.process_audio(audio_deg)
 
         if f0_ref is None or f0_deg is None:
-            return torch.tensor(0.0)
+            return 0.0
 
         # Avoid silence
         min_length = min(len(f0_ref), len(f0_deg))
         if min_length <= 1:
-            return torch.tensor(0.0)
+            return 0.0
 
         # F0 length alignment
         if self.method == "cut":
@@ -644,10 +646,10 @@ class F0CorrLoss(torch.nn.Module):
         try:
             res = self.pearson(f0_ref, f0_deg)
             if torch.isnan(res):
-                return torch.tensor(0.0)
-            return res
+                return 0.0
+            return res.item()
         except Exception:
-            return torch.tensor(0.0)
+            return 0.0
 
 
 waveform_loss = L1Loss()
