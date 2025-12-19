@@ -28,9 +28,10 @@ class UnicodecBaseCodec(BaseCodec):
                         return original_get_field(cls, name, type, kw_only)
                     
                     # Skip typing module objects (Any, Union, etc.)
-                    # Check both module and typing-specific attributes
-                    val_module = getattr(type(val), '__module__', '')
-                    if val_module == 'typing' or hasattr(val, '__origin__') or hasattr(val, '__args__'):
+                    # Check both the value's module and its type's module
+                    val_module = getattr(val, '__module__', '')
+                    val_type_module = getattr(type(val), '__module__', '')
+                    if val_module == 'typing' or val_type_module == 'typing' or hasattr(val, '__origin__') or hasattr(val, '__args__'):
                         return original_get_field(cls, name, type, kw_only)
                     
                     if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
