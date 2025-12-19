@@ -23,7 +23,7 @@ class UnicodecBaseCodec(BaseCodec):
                 # Use a local reference to the built-in type() to avoid collision with 'field_type' (originally 'type')
                 _type = type
                 val = getattr(cls, name, dataclasses.MISSING)
-                if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
+                if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field) and not name.startswith('_'):
                     # Skip sentinel types (e.g., _UNPAGED_TYPE, _MISSING_TYPE)
                     val_type_name = _type(val).__name__
                     if val_type_name.startswith('_') and val_type_name.endswith('_TYPE'):
