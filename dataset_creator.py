@@ -9,7 +9,31 @@ import io
 import soundfile as sf
 
 
-def get_duration(x):
+def manual_decode_item(x):
+    try:
+        audio_entry = x['audio']
+        if isinstance(audio_entry, dict):
+            audio_bytes = audio_entry.get('bytes')
+            path = audio_entry.get('path')
+            if audio_bytes:
+                with io.BytesIO(audio_bytes) as f:
+                    array, sr = sf.read(f)
+            elif path:
+                array, sr = sf.read(path)
+            else:
+                array, sr = None, None
+            
+            x['audio'] = {
+                'array': array,
+                'sampling_rate': sr
+            }
+        return x
+    except Exception as e:
+        print(f"Error in manual_decode_item: {e}")
+        return x
+
+
+def get_audio_info(x):
     try:
         audio_entry = x['audio']
         if isinstance(audio_entry, dict):
@@ -18,13 +42,13 @@ def get_duration(x):
             if audio_bytes:
                 with io.BytesIO(audio_bytes) as f:
                     info = sf.info(f)
-                    return info.duration
+                    return info.duration, info.samplerate
             elif path:
                 info = sf.info(path)
-                return info.duration
-        return 0
+                return info.duration, info.samplerate
+        return 0, None
     except Exception:
-        return 0
+        return 0, None
 
 
 def run_experiment(dataset_name):
@@ -32,23 +56,21 @@ def run_experiment(dataset_name):
     if args.limit:
         cleaned_dataset = cleaned_dataset.select(range(min(args.limit, len(cleaned_dataset))))
     
-    # Disable automatic decoding to avoid C++ backend crashes during mass filtering
+    # Disable automatic decoding to avoid C++ backend crashes during mass filtering and synthesis
     cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(decode=False))
     
     print("before filter duration", cleaned_dataset)
     cleaned_dataset = cleaned_dataset.filter(
-        lambda x: get_duration(x) <= args.max_duration)
-    
-    # Re-enable decoding
-    cleaned_dataset = cleaned_dataset.cast_column("audio", Audio(decode=True))
+        lambda x: get_audio_info(x)[0] <= args.max_duration)
     
     print("after filter duration", cleaned_dataset)
     
-    d_item = next(iter(cleaned_dataset))
-    sampling_rate = d_item['audio']['sampling_rate']
-    cleaned_dataset = apply_audio_cast(cleaned_dataset, sampling_rate)
+    # Get sampling rate safely from the first item
+    first_item = cleaned_dataset[0]
+    _, sampling_rate = get_audio_info(first_item)
+    
     if not args.extract_unit_only:
-        datasets_dict = DatasetDict({'original': cleaned_dataset})
+        datasets_dict = DatasetDict({'original': cleaned_dataset.cast_column("audio", Audio(sampling_rate=sampling_rate))})
     else:
         datasets_dict = DatasetDict({})
     for codec_name in list_codec():
@@ -83,11 +105,10 @@ def run_experiment(dataset_name):
                 print(f"Skipping {codec_name} due to extraction error during 1D check: {e}")
                 continue
 
-        synthesized_dataset = apply_audio_cast(cleaned_dataset, codec.sampling_rate)
-        if args.extract_unit_only == 'extract_unit':
-            synthesized_dataset = synthesized_dataset.map(extract_unit, fn_kwargs={'extract_unit_class': codec})
+        if args.extract_unit_only:
+            synthesized_dataset = cleaned_dataset.map(lambda x: extract_unit(manual_decode_item(x), codec))
         else:
-            synthesized_dataset = synthesized_dataset.map(codec.synth)
+            synthesized_dataset = cleaned_dataset.map(lambda x: codec.synth(manual_decode_item(x)))
             synthesized_dataset = synthesized_dataset.cast_column("audio", Audio(sampling_rate=sampling_rate))
         synthesized_dataset.save_to_disk(f"./cached_datasets/{dataset_name}_{codec_name}/")
         datasets_dict[f'{codec_name}'] = synthesized_dataset
