@@ -13,8 +13,7 @@ class UnicodecBaseCodec(BaseCodec):
         self._setup_config_and_model()
 
     def _setup_config_and_model(self):
-        try:
-            # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12)
+        # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12)
             import dataclasses
             import copy
             original_get_field = dataclasses._get_field
@@ -35,7 +34,7 @@ class UnicodecBaseCodec(BaseCodec):
             import fairseq.dataclass.initialize
             from unittest.mock import MagicMock
             fairseq.dataclass.initialize.hydra_init = MagicMock()
-            
+        try:
             from unicodec.decoder.pretrained import Unicodec as UniCodec
         except Exception as e:
             import traceback
