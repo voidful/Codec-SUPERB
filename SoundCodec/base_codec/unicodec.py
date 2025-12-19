@@ -109,7 +109,7 @@ class UnicodecBaseCodec(BaseCodec):
     def extract_unit(self, data, domain='0'):
         #  0 for speech, 1 for music, 2 for audio
         wav = torch.tensor(numpy.array([data["audio"]['array']]), dtype=torch.float32).to(self.device)
-        bandwidth_id = torch.tensor([0])
+        bandwidth_id = torch.tensor([0]).to(self.device)
         features, discrete_code = self.model.encode_infer(wav, domain=domain, bandwidth_id=bandwidth_id)
         return ExtractedUnit(
             unit=discrete_code[0],
@@ -119,7 +119,7 @@ class UnicodecBaseCodec(BaseCodec):
     @torch.no_grad()
     def decode_unit(self, stuff_for_synth):
         features, bandwidth_id = stuff_for_synth
-        audio_out = self.model.decode(features, bandwidth_id=bandwidth_id)
+        audio_out = self.model.decode(features.to(self.device), bandwidth_id=bandwidth_id.to(self.device))
         wav = audio_out.detach().cpu().numpy()
         return wav
 
@@ -155,7 +155,7 @@ class UnicodecBaseCodec(BaseCodec):
         batch_wav = torch.stack(padded_wavs, dim=0).to(self.device)
 
         # Create batch bandwidth_id
-        batch_bandwidth_id = torch.zeros(len(data_list), dtype=torch.long)
+        batch_bandwidth_id = torch.zeros(len(data_list), dtype=torch.long).to(self.device)
 
         # Encode the entire batch at once
         with torch.no_grad():
@@ -196,8 +196,8 @@ class UnicodecBaseCodec(BaseCodec):
             all_bandwidth_ids.append(bandwidth_id)
 
         # Stack for batch processing
-        batch_features = torch.cat(all_features, dim=0)
-        batch_bandwidth_id = torch.cat(all_bandwidth_ids, dim=0)
+        batch_features = torch.cat(all_features, dim=0).to(self.device)
+        batch_bandwidth_id = torch.cat(all_bandwidth_ids, dim=0).to(self.device)
 
         # Decode the entire batch at once
         with torch.no_grad():
