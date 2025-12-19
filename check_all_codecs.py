@@ -6,7 +6,6 @@ import sys
 import psutil
 import time
 from SoundCodec.codec import list_codec, load_codec
-from collections import defaultdict
 import traceback
 
 def check_all_codecs():
@@ -42,13 +41,56 @@ def check_all_codecs():
     for codec_name in codecs:
         print(f"\n[{codec_name}] Testing...")
         start_time = time.time()
+        res = {
+            'name': codec_name,
+            'synth_status': '❓',
+            'unit_shape': '-',
+            'effective_ndim': '-',
+            'is_1d': '-',
+            'time': '-',
+            'error': ''
+        }
+        
         try:
             # Load codec
             codec = load_codec(codec_name)
             
-            # Prepare data item
-            # Most codecs expect a specific sampling rate, but synth usually handles resampling or expects it
-            # We'll provide the original sample rate and array
+            # 1. Check Dimensions (using extract_unit with dummy data)
+            dummy_data = {
+                "audio": {
+                    "array": np.zeros(16000),
+                    "sampling_rate": 16000
+                }
+            }
+            try:
+                extracted = codec.extract_unit(dummy_data)
+                unit = extracted.unit
+                res['unit_shape'] = str(list(unit.shape))
+                
+                # Check effective ndim manually for reporting
+                if hasattr(unit, 'squeeze'):
+                     squeezed_unit = unit.squeeze()
+                     dims = squeezed_unit.shape if hasattr(squeezed_unit, 'shape') else ()
+                else:
+                     dims = unit.shape
+
+                # effective_dims = [d for d in dims if d > 1] # This logic depends on exact shape
+                # Easier: use the codec's is_1d method if available, or manual check
+                
+                is_1d_status = codec.is_1d()
+                res['is_1d'] = str(is_1d_status)
+                
+                # Re-calculate effective ndim for display (similar to check_all_codecs_dim.py)
+                # We use the raw unit shape filtering for consistency
+                raw_dims = unit.shape
+                effective_dims_list = [d for d in raw_dims if d > 1]
+                res['effective_ndim'] = str(len(effective_dims_list))
+
+            except Exception as e:
+                res['unit_shape'] = 'Error'
+                print(f"  Dimension check failed: {e}")
+
+            # 2. Check Synthesis (using real sample)
             data_item = {
                 'id': 'test_sample',
                 'audio': {
@@ -57,55 +99,41 @@ def check_all_codecs():
                 }
             }
             
-            # Run synth (inference)
-            # local_save=False to avoid cluttering with wav files
             output = codec.synth(data_item, local_save=False)
             
-            # Check output
             if 'audio' in output and 'array' in output['audio']:
                 output_array = output['audio']['array']
                 duration = time.time() - start_time
-                print(f"[{codec_name}] Success! (Time: {duration:.2f}s, Output shape: {output_array.shape})")
-                results.append({
-                    'name': codec_name,
-                    'status': '✅ Pass',
-                    'time': f"{duration:.2f}s",
-                    'error': ''
-                })
+                print(f"  Success! (Time: {duration:.2f}s, Output: {output_array.shape})")
+                res['synth_status'] = '✅ Pass'
+                res['time'] = f"{duration:.2f}s"
             else:
-                print(f"[{codec_name}] Failed: 'audio.array' not in output")
-                results.append({
-                    'name': codec_name,
-                    'status': '❌ Fail',
-                    'time': '-',
-                    'error': "'audio.array' missing in output"
-                })
+                print(f"  Failed: 'audio.array' not in output")
+                res['synth_status'] = '❌ Fail'
+                res['error'] = "Missing audio output"
                 
         except Exception as e:
             duration = time.time() - start_time
-            error_msg = str(e).split('\n')[0] # Get first line of error
-            print(f"[{codec_name}] Failed: {error_msg}")
-            # traceback.print_exc()
-            results.append({
-                'name': codec_name,
-                'status': '❌ Fail',
-                'time': f"{duration:.2f}s",
-                'error': error_msg
-            })
+            error_msg = str(e).split('\n')[0]
+            print(f"  Failed: {error_msg}")
+            res['synth_status'] = '❌ Fail'
+            res['time'] = f"{duration:.2f}s"
+            res['error'] = error_msg
+        
+        results.append(res)
         
         # Cleanup
         if 'codec' in locals():
             del codec
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
-        # gc.collect() # Optional
 
     # Print summary table
-    print("\n" + "="*80)
-    print(f"{'Codec Name':<45} | {'Status':<10} | {'Time':<10} | {'Error'}")
-    print("-" * 80)
+    print("\n" + "="*120)
+    print(f"{'Codec Name':<40} | {'Synth':<6} | {'Shape':<20} | {'Ndim':<5} | {'1D?':<6} | {'Time':<8} | {'Error'}")
+    print("-" * 120)
     for res in results:
-        print(f"{res['name']:<45} | {res['status']:<10} | {res['time']:<10} | {res['error']}")
-    print("="*80)
+        print(f"{res['name']:<40} | {res['synth_status']:<6} | {res['unit_shape']:<20} | {res['effective_ndim']:<5} | {res['is_1d']:<6} | {res['time']:<8} | {res['error']}")
+    print("="*120)
 
 if __name__ == "__main__":
     check_all_codecs()
