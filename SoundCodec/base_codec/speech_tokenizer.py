@@ -10,8 +10,8 @@ class SpeechTokenizerBaseCodec(BaseCodec):
     def __init__(self):
         try:
             from speechtokenizer import SpeechTokenizer
-        except:
-            raise Exception("Please install SpeechTokenizer first. pip install -U speechtokenizer")
+        except Exception as e:
+            raise Exception(f"Please install SpeechTokenizer first. pip install -U speechtokenizer. Error: {e}")
 
         super().__init__()
         self.model = SpeechTokenizer.load_from_checkpoint(self.config_path, self.ckpt_path)
