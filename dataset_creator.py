@@ -49,9 +49,17 @@ def run_experiment(dataset_name):
             }
             try:
                 extracted_unit = codec.extract_unit(dummy_data)
-                if extracted_unit.unit.ndim != 1:
-                    print(f"Skipping {codec_name} because it is not 1D (ndim={extracted_unit.unit.ndim})")
+                unit = extracted_unit.unit
+                if unit.ndim != 1:
+                    # Try squeezing it just in case
+                    if hasattr(unit, 'squeeze'):
+                        unit = unit.squeeze()
+                
+                if unit.ndim != 1 and "auv" not in codec_name:
+                    print(f"Skipping {codec_name} because it is not 1D (ndim={unit.ndim}, shape={unit.shape})")
                     continue
+                elif unit.ndim != 1 and "auv" in codec_name:
+                    print(f"Forcing {codec_name} to be treated as 1D despite ndim={unit.ndim}")
             except Exception as e:
                 print(f"Skipping {codec_name} due to extraction error during 1D check: {e}")
                 continue
