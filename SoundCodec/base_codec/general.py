@@ -64,27 +64,45 @@ def save_audio(wav: Union[torch.Tensor, np.ndarray], path, sample_rate: int, res
         print(f"Warning: Attempting to save empty audio to {path}. Skipping.")
         return
 
-    print(f"Saving audio to {path} with sample_rate {sample_rate}, shape {wav.shape}")
+    print(f"Saving audio to {path} with sample_rate {sample_rate}, shape {wav.shape}, dtype {wav.dtype}")
+    
+    # Move to CPU immediately to avoid GPU-related C++ errors in backends
+    wav = wav.detach().cpu()
+    
+    # Check for NaN or Inf which can crash some backends
+    if torch.isnan(wav).any() or torch.isinf(wav).any():
+        print(f"Warning: Audio contains NaN or Inf. Clamping and replacing NaNs with zeros.")
+        wav = torch.nan_to_num(wav, nan=0.0, posinf=limit, neginf=-limit)
+
     limit = 0.99
     try:
         max_val = wav.abs().max()
         if max_val > 0:
             wav = wav * min(limit / max_val, 1) if rescale else wav.clamp(-limit, limit)
-        else:
-            # Silence
-            pass
         
-        # Fallback to scipy to avoid torchaudio C++ backend issues on some systems
+        # Try scipy first as it's pure Python/NumPy (no C++ backend issues)
         try:
             from scipy.io import wavfile
-            # scipy expects [Time, Channels] or [Time] for mono
-            audio_out = wav.squeeze().cpu().numpy()
-            # Ensure it's 16-bit PCM for consistency
+            audio_out = wav.squeeze().numpy()
             audio_int16 = (audio_out * 32767).astype(np.int16)
             wavfile.write(str(path), sample_rate, audio_int16)
-        except ImportError:
-            # If scipy not available, try torchaudio as last resort
-            torchaudio.save(str(path), wav.cpu(), sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
+            return
+        except (ImportError, Exception) as e:
+            if not isinstance(e, ImportError):
+                print(f"Scipy save failed: {e}. Falling back to torchaudio.")
+        
+        # Try soundfile as second option
+        try:
+            import soundfile as sf
+            audio_out = wav.squeeze().numpy()
+            sf.write(str(path), audio_out, sample_rate, subtype='PCM_16')
+            return
+        except (ImportError, Exception) as e:
+            if not isinstance(e, ImportError):
+                print(f"Soundfile save failed: {e}. Falling back to torchaudio.")
+
+        # Last resort: torchaudio
+        torchaudio.save(str(path), wav, sample_rate=sample_rate, encoding='PCM_S', bits_per_sample=16)
     except Exception as e:
         print(f"Error saving audio to {path}: {e}")
         raise

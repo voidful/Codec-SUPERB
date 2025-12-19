@@ -3,7 +3,10 @@ import os
 
 def load_codec(codec_name):
     module = __import__(f"SoundCodec.codec.{codec_name}", fromlist=[codec_name])
-    return module.Codec()
+    codec = module.Codec()
+    if codec.setting is None:
+        codec.setting = codec_name
+    return codec
 
 
 def list_codec(ignore_list=['__init__.py', 'general.py']):
