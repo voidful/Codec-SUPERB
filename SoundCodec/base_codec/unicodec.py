@@ -13,6 +13,55 @@ class UnicodecBaseCodec(BaseCodec):
         self._setup_config_and_model()
 
     def _setup_config_and_model(self):
+        # Monkeypatch dataclasses to allow mutable defaults (needed for fairseq on Python 3.12+)
+        import sys
+        if sys.version_info[:2] >= (3, 12):
+            import dataclasses
+            import copy
+            original_get_field = dataclasses._get_field
+            def patched_get_field(cls, name, field_type, kw_only):
+                # Use a local reference to the built-in type() to avoid collision with 'field_type' (originally 'type')
+                _type = type
+                val = getattr(cls, name, dataclasses.MISSING)
+                if val is not dataclasses.MISSING and not isinstance(val, dataclasses.Field):
+                    # Skip sentinel types (e.g., _UNPAGED_TYPE, _MISSING_TYPE)
+                    val_type_name = _type(val).__name__
+                    if val_type_name.startswith('_') and val_type_name.endswith('_TYPE'):
+                        return original_get_field(cls, name, field_type, kw_only)
+                    
+                    # Skip typing module objects (Any, Union, etc.)
+                    # Check both the value's module and its type's module
+                    val_module = getattr(val, '__module__', '')
+                    val_type_module = getattr(_type(val), '__module__', '')
+                    val_str = str(val)
+                    if (val_module == 'typing' or val_type_module == 'typing' or 
+                        hasattr(val, '__origin__') or hasattr(val, '__args__') or
+                        'typing.' in val_str or val_str == 'Any'):
+                        return original_get_field(cls, name, field_type, kw_only)
+                    
+                    if isinstance(val, (list, dict)) or hasattr(val, "__dataclass_fields__"):
+                        def factory(v=val):
+                            try:
+                                return copy.deepcopy(v)
+                            except (TypeError, AttributeError) as e:
+                                # If deepcopy fails (e.g., for typing objects), return original
+                                err_str = str(e).lower()
+                                if 'cannot be instantiated' in err_str or 'cannot instantiate' in err_str:
+                                    return v
+                                return v
+                        setattr(cls, name, dataclasses.field(default_factory=factory))
+                return original_get_field(cls, name, field_type, kw_only)
+            dataclasses._get_field = patched_get_field
+
+        # Monkeypatch fairseq before it initializes hydra
+        import sys
+        from unittest.mock import MagicMock
+        
+        # Suppress ANTLR parser import errors
+        sys.modules['fairseq.dataclass.utils'] = MagicMock()
+        
+        import fairseq.dataclass.initialize
+        fairseq.dataclass.initialize.hydra_init = MagicMock()
         try:
             from unicodec.decoder.pretrained import Unicodec as UniCodec
         except Exception as e:
