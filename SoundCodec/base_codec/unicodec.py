@@ -38,6 +38,8 @@ class UnicodecBaseCodec(BaseCodec):
             
             from unicodec.decoder.pretrained import Unicodec as UniCodec
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             raise Exception(
                 f"Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix. Error: {e}"
             )
