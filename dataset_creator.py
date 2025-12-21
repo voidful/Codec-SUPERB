@@ -1,4 +1,5 @@
 import argparse
+import os
 from datasets import DatasetDict, Audio, load_from_disk
 import datasets
 from SoundCodec.codec import load_codec, list_codec
@@ -162,15 +163,33 @@ def run_experiment(dataset_name):
     datasets_dict_unit_only.save_to_disk(f"./datasets/{dataset_name}_unit")
     print(f"Saved unit-only dataset to ./datasets/{dataset_name}_unit")
     
-    # remove datasets_dict columns if they have 'unit', and use datasets_dict_synth for saving
+    # Create synth dataset - need to create a new DatasetDict to avoid overwriting itself
     datasets_dict_synth = DatasetDict({})
     for key in datasets_dict.keys():
         if 'unit' not in datasets_dict[key].column_names:
             datasets_dict_synth[key] = datasets_dict[key]
         else:
             datasets_dict_synth[key] = datasets_dict[key].remove_columns(['unit'])
+    
     if not args.extract_unit_only:
-        datasets_dict_synth.save_to_disk(f"./datasets/{dataset_name}_synth")
+        # When using --specific_codecs, we need to save to a temp location first to avoid overwriting
+        if args.specific_codecs:
+            import tempfile
+            import shutil
+            
+            # Save to temporary directory first
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = f"{temp_dir}/temp_synth"
+                datasets_dict_synth.save_to_disk(temp_path)
+                
+                # Remove old directory and move temp to final location
+                final_path = f"./datasets/{dataset_name}_synth"
+                if os.path.exists(final_path):
+                    shutil.rmtree(final_path)
+                shutil.move(temp_path, final_path)
+        else:
+            # Original behavior for full dataset creation
+            datasets_dict_synth.save_to_disk(f"./datasets/{dataset_name}_synth")
         print(f"Saved synth dataset to ./datasets/{dataset_name}_synth")
 
     if args.push_to_hub:
