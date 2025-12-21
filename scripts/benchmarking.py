@@ -178,16 +178,11 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     print(f"Total execution time: {time.time() - start_time:.2f} seconds")
     print(f"Final RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
 
-    # Save results
-    output_file_name = f"{dataset_name.replace('/', '_')}_evaluation_results.json"
-    with open(output_file_name, 'w') as out_file:
-        json.dump(result_data, out_file, indent=4, default=default_converter)
-
-    base_filename = f"{args.dataset.replace('/', '_')}_evaluation_results"
+    # Save results with timestamp if file already exists
+    base_filename = f"{dataset_name.replace('/', '_')}_evaluation_results"
     timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
     output_file_name = f"{base_filename}{timestamp}.json"
 
-    # Save results to the file
     with open(output_file_name, 'w') as out_file:
         json.dump(result_data, out_file, indent=4, default=default_converter)
 
