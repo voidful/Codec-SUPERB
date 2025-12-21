@@ -3,6 +3,9 @@ import numpy as np
 from SoundCodec.base_codec.general import BaseCodec, ExtractedUnit, BatchExtractedUnit
 
 class S3TokenizerBaseCodec(BaseCodec):
+    # S3Tokenizer is encode-only, no decoder available
+    supports_decode = False
+    
     def __init__(self):
         super().__init__()
 
@@ -40,9 +43,14 @@ class S3TokenizerBaseCodec(BaseCodec):
 
     @torch.no_grad()
     def decode_unit(self, stuff_for_synth):
-        # S3Tokenizer doesn't have a decoder in its package
-        # Return zeros or a dummy signal to satisfy the interface
-        return np.zeros(16000)
+        """
+        S3Tokenizer is an encode-only tokenizer with no decoder.
+        The tokens are meant to be used by separate generative models (e.g., CosyVoice).
+        """
+        raise NotImplementedError(
+            "S3Tokenizer does not support decoding. It is an encode-only tokenizer. "
+            "Use the extracted tokens with a separate generative model for synthesis."
+        )
 
     @torch.no_grad()
     def batch_extract_unit(self, data_list):
@@ -68,4 +76,9 @@ class S3TokenizerBaseCodec(BaseCodec):
 
     @torch.no_grad()
     def batch_decode_unit(self, batch_extracted_unit):
-        return [np.zeros(16000)] * batch_extracted_unit.batch_size
+        """
+        S3Tokenizer is an encode-only tokenizer with no decoder.
+        """
+        raise NotImplementedError(
+            "S3Tokenizer does not support decoding. It is an encode-only tokenizer."
+        )

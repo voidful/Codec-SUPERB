@@ -94,7 +94,10 @@ values = {
     'funcodec_en_libritts_16k_nq32ds640': {'bps': 8, 'tps': 25},
     'funcodec_zh_en_16k_nq32ds320': {'bps': 16, 'tps': 50},
     'funcodec_zh_en_16k_nq32ds640': {'bps': 8, 'tps': 25},
-    's3tokenizer_v1': {'bps': 0.5, 'tps': 50},
+    's3tokenizer_v1': {'bps': 0.5, 'tps': 50},  # V1 50hz
+    's3tokenizer_v1_25hz': {'bps': 0.25, 'tps': 25},  # V1 25hz
+    's3tokenizer_v2_25hz': {'bps': 0.25, 'tps': 25},  # V2 25hz
+    's3tokenizer_v3_25hz': {'bps': 0.25, 'tps': 25},  # V3 25hz
     'speech_tokenizer_16k': {'bps': 4, 'tps': 50},
     'sqcodec_16k_0k75bps': {'bps': 0.75, 'tps': 50},
     'sqcodec_16k_12kbps': {'bps': 12, 'tps': 50},

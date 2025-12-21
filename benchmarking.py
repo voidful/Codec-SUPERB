@@ -101,6 +101,25 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     for model in models:
         if specific_models is not None and model not in specific_models:
             continue
+        
+        # Check if this is an encode-only codec by trying to load it
+        try:
+            from SoundCodec.codec import load_codec
+            codec_instance = load_codec(model)
+            if hasattr(codec_instance, 'supports_decode') and not codec_instance.supports_decode:
+                print(f"Skipping {model}: encode-only codec (no decoder available)")
+                result_data[model] = {
+                    "encode_only": True,
+                    "message": "This codec only supports encoding. No reconstruction metrics available."
+                }
+                del codec_instance
+                gc.collect()
+                continue
+            del codec_instance
+            gc.collect()
+        except Exception as e:
+            print(f"Warning: Could not check codec {model}: {e}")
+        
         print(f"Evaluating metrics for model: {model}")
         model_start_time = time.time()
 
