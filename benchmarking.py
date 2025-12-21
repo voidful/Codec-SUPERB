@@ -12,6 +12,7 @@ from collections import defaultdict
 from datasets import load_dataset, load_from_disk
 from audiotools import AudioSignal
 from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
 from SoundCodec.base_codec.general import pad_arrays_to_match
 from SoundCodec.metrics import get_metrics
 import datasets
