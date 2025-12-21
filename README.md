@@ -108,7 +108,7 @@ Follow these steps to evaluate your codec and contribute to the [Official Leader
 Use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset:
 
 ```bash
-python3 scripts/dataset_creator.py --dataset voidful/codec-superb-tiny
+PYTHONPATH=. python3 scripts/dataset_creator.py --dataset voidful/codec-superb-tiny
 ```
 
 ### 2. Calculate Metrics
@@ -116,7 +116,13 @@ python3 scripts/dataset_creator.py --dataset voidful/codec-superb-tiny
 Compute standard metrics (MEL, PESQ, STOI, F0Corr):
 
 ```bash
-python3 scripts/benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+# Benchmark all codecs
+PYTHONPATH=. python3 scripts/benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+
+# Benchmark only specific codec(s)
+PYTHONPATH=. python3 scripts/benchmarking.py \
+    --dataset datasets/voidful/codec-superb-tiny_synth \
+    --models llmcodec
 ```
 
 ### 3. Submit Results
@@ -143,7 +149,7 @@ Certain codecs (e.g., `s3tokenizer`) focus on tokenization and do not support re
 python -m pytest SoundCodec/test/
 
 # Verify all codecs (Initialization & Synthesis)
-python3 scripts/check_all_codecs.py
+PYTHONPATH=. python3 scripts/check_all_codecs.py
 ```
 
 ---
