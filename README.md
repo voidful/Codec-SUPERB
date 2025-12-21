@@ -1,486 +1,178 @@
 # Codec-SUPERB: Sound Codec Speech Processing Universal Performance Benchmark
 
+<div align="center">
+
 ![Overview](img/Overview.png)
 
-Codec-SUPERB is a comprehensive benchmark designed to evaluate audio codec models across a variety of speech tasks. Our
-goal is to facilitate community collaboration and accelerate advancements in the field of speech processing by
-preserving and enhancing speech information quality.
+[![Project Page](https://img.shields.io/badge/Project-Page-Green?style=for-the-badge)](https://codecsuperb.com/)
+[![Paper](https://img.shields.io/badge/Paper-Arxiv-red?style=for-the-badge)](https://arxiv.org/abs/2402.13071)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-<a href='https://codecsuperb.com/'><img src='https://img.shields.io/badge/Project-Page-Green'></a>  <a href='https://arxiv.org/abs/2402.13071'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
+**A comprehensive benchmark evaluating audio codec models across diverse speech processing tasks.**
 
-## Table of Contents
+</div>
 
-- [Introduction](#introduction)
-- [Key Features](#key-features)
-- [Batch Processing](#batch-processing)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Single Audio Processing](#single-audio-processing)
-  - [Batch Audio Processing](#batch-audio-processing)
-  - [Performance Comparison](#performance-comparison)
-- [Benchmarking and Leaderboard](#benchmarking-and-leaderboard-contribution)
-  - [Incremental Codec Addition](#incremental-codec-addition)
-- [Encode-Only Codec Support](#encode-only-codec-support)
-- [Testing](#testing)
-- [Contribution](#contribution)
-- [License](#license)
+---
 
-## Introduction
+## 📖 Introduction
 
-Codec-SUPERB sets a new benchmark in evaluating sound codec models, providing a rigorous and transparent framework for
-assessing performance across a range of speech processing tasks. Our goal is to foster innovation and set new standards
-in audio quality and processing efficiency.
+**Codec-SUPERB** sets a new standard for evaluating sound codec models. We provide a rigorous and transparent framework for assessing speech quality and information preservation across various downstream tasks. Our goal is to foster innovation and facilitate community collaboration in the field of neural audio coding.
 
-## Key Features
+---
 
-### Out-of-the-Box Codec Interface
+## ✨ Key Features
 
-Codec-SUPERB offers an intuitive, out-of-the-box codec interface that allows for easy integration and testing of various
-codec models, facilitating quick iterations and experiments.
+* 🚀 **Out-of-the-Box Interface**: Intuitive API for easy integration and rapid experimentation with diverse codec models.
+* 📊 **Multi-Perspective Leaderboard**: Comprehensive assessment across various speech processing dimensions with rankings for competitive transparency.
+* 🏗️ **Standardized Environment**: Ensures fair and consistent comparisons by using uniform testing conditions for all models.
+* 📚 **Unified Datasets**: Curated collection of datasets testing a wide range of real-world speech processing scenarios.
+* ⚡ **Batch Processing Support**: Highly optimized batch encoding/decoding for significant performance speedups.
 
-### Multi-Perspective Leaderboard
+---
 
-Codec-SUPERB's unique blend of multi-perspective evaluation and an online leaderboard drives innovation in sound codec
-research by providing a comprehensive assessment and fostering competitive transparency among developers.
-
-### Standardized Environment
-
-We ensure a standardized testing environment to guarantee fair and consistent comparison across all models. This
-uniformity brings reliability to benchmark results, making them universally interpretable.
-
-### Unified Datasets
-
-We provide a collection of unified datasets, curated to test a wide range of speech processing scenarios. This ensures
-that models are evaluated under diverse conditions, reflecting real-world applications.
-
-## Batch Processing
-
-**🚀 NEW: Efficient Batch Processing Support**
-
-Codec-SUPERB now supports efficient batch processing for encoding and decoding multiple audio samples simultaneously, eliminating the need for for loops and providing significant performance improvements.
-
-### ✅ Key Benefits
-
-- **3-5x faster processing** for multiple audio samples
-- **GPU optimization** through vectorized operations
-- **Automatic padding** for variable-length audio samples
-- **Memory efficient** batch operations
-- **Backward compatible** - existing code continues to work
-
-### ✅ Supported Operations
-
-- `batch_extract_unit()`: Extract units from multiple audio samples at once
-- `batch_decode_unit()`: Decode multiple units back to audio at once  
-- `batch_synth()`: Complete synthesis pipeline for multiple samples
-
-### ✅ All Codecs Supported
-
-Every codec in Codec-SUPERB includes optimized batch processing:
-
-- **EnCodec** (all variants): True tensor batching with automatic padding
-- **SpeechTokenizer**: RVQ-aware batch processing  
-- **AudioDec**: Quantizer-optimized batch operations
-- **HuggingFace EnCodec**: Native transformer batch processing
-- **Descript Audio Codec**: Batch compression/decompression
-- **SQCodec**: Feature-aware batch encoding
-- **FunCodec**: AudioSignal batch handling
-- **AUV**: All-in-one codec with symmetric quantization
-- **BigCodec**: Low-bitrate neural speech coding
-- **S3Tokenizer**: Semantic-aware batch tokenization
-- **UniCodec**: High-quality speech reconstruction
-- **WavTokenizer**: Bandwidth-aware batch processing
-- **AcademicCodec**: Acoustic token batch generation
-
-## Installation
+## 🛠️ Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/voidful/Codec-SUPERB.git
 cd Codec-SUPERB
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Usage
+---
 
-### [Leaderboard](https://codecsuperb.com)
+## 🚀 Quick Start
+
+### List and Load Codecs
+
+```python
+from SoundCodec import codec
+
+# List all available codecs
+print(codec.list_codec())
+
+# Load a specific codec
+model = codec.load_codec('encodec_24k_6bps')
+```
 
 ### Single Audio Processing
 
-Traditional single audio processing (still fully supported):
-
 ```python
-from SoundCodec import codec
 import torchaudio
 
-# get all available codec
-print(codec.list_codec())
-# load codec by name, use encodec as example
-encodec_24k_6bps = codec.load_codec('encodec_24k_6bps')
-
-# load audio
+# Load audio
 waveform, sample_rate = torchaudio.load('sample_audio.wav')
-resampled_waveform = waveform.numpy()[-1]
-data_item = {'audio': {'array': resampled_waveform,
-                       'sampling_rate': sample_rate}}
+data_item = {'audio': {'array': waveform.numpy()[-1], 'sampling_rate': sample_rate}}
 
-# extract unit
-sound_unit = encodec_24k_6bps.extract_unit(data_item).unit
+# Extract discrete units
+sound_unit = model.extract_unit(data_item).unit
 
-# sound synthesis
-decoded_waveform = encodec_24k_6bps.synth(data_item, local_save=False)['audio']['array']
+# Reconstruct audio
+reconstructed = model.synth(data_item, local_save=False)['audio']['array']
 ```
 
-### Batch Audio Processing
+---
 
-**🚀 NEW: Process multiple audio samples efficiently:**
+## ⚡ Advanced Usage: Batch Processing
+
+Codec-SUPERB supports efficient batch operations, typically providing **3-5x performance improvement** on GPU.
 
 ```python
-from SoundCodec import codec
-import torchaudio
+# Prepare multiple samples
+data_list = [
+    {'audio': {'array': wave1, 'sampling_rate': 16000}},
+    {'audio': {'array': wave2, 'sampling_rate': 16000}}
+]
 
-# load codec
-encodec_24k_6bps = codec.load_codec('encodec_24k_6bps')
+# Option 1: Batch extraction and decoding (Recommended)
+batch_extracted = model.batch_extract_unit(data_list)
+batch_decoded = model.batch_decode_unit(batch_extracted)
 
-# prepare multiple audio samples
-audio_files = ['audio1.wav', 'audio2.wav', 'audio3.wav']
-data_list = []
-
-for audio_file in audio_files:
-    waveform, sample_rate = torchaudio.load(audio_file)
-    data_item = {
-        'id': audio_file,
-        'audio': {
-            'array': waveform.numpy()[0],  # take first channel
-            'sampling_rate': sample_rate
-        }
-    }
-    data_list.append(data_item)
-
-# OPTION 1: Batch extraction and decoding (recommended)
-batch_extracted = encodec_24k_6bps.batch_extract_unit(data_list)
-print(f"Extracted {batch_extracted.batch_size} samples")
-print(f"Unit shapes: {[unit.shape for unit in batch_extracted.units]}")
-
-batch_decoded = encodec_24k_6bps.batch_decode_unit(batch_extracted)
-print(f"Decoded audio shapes: {[audio.shape for audio in batch_decoded]}")
-
-# OPTION 2: Complete batch synthesis pipeline
-results = encodec_24k_6bps.batch_synth(data_list, local_save=False)
-for i, result in enumerate(results):
-    print(f"Sample {i}: unit shape {result['unit'].shape}, "
-          f"audio shape {result['audio']['array'].shape}")
+# Option 2: Complete batch synthesis pipeline
+results = model.batch_synth(data_list, local_save=False)
 ```
 
-### Performance Comparison
+> [!TIP]
+> Grouping samples by similar lengths can further optimize batch processing efficiency.
 
-Compare single vs batch processing performance:
+---
 
-```python
-import time
+## 🎯 Benchmarking & Leaderboard
 
-# Single processing (old approach)
-start_time = time.time()
-single_results = []
-for data in data_list:
-    extracted = encodec_24k_6bps.extract_unit(data)
-    decoded = encodec_24k_6bps.decode_unit(extracted.stuff_for_synth)
-    single_results.append(decoded)
-single_time = time.time() - start_time
+Follow these steps to evaluate your codec and contribute to the [Official Leaderboard](https://codecsuperb.com).
 
-# Batch processing (new approach)  
-start_time = time.time()
-batch_extracted = encodec_24k_6bps.batch_extract_unit(data_list)
-batch_results = encodec_24k_6bps.batch_decode_unit(batch_extracted)
-batch_time = time.time() - start_time
+### 1. Synthesize the Test Set
 
-print(f"Single processing: {single_time:.3f}s")
-print(f"Batch processing: {batch_time:.3f}s") 
-print(f"Speedup: {single_time/batch_time:.2f}x")
-```
-
-### Advanced Batch Processing Tips
-
-**Group samples by length for optimal performance:**
-
-```python
-# Group samples by similar lengths
-short_samples = [data for data in data_list if len(data['audio']['array']) < 48000]
-long_samples = [data for data in data_list if len(data['audio']['array']) >= 48000]
-
-# Process each group separately for better efficiency
-if short_samples:
-    short_results = encodec_24k_6bps.batch_extract_unit(short_samples)
-if long_samples:
-    long_results = encodec_24k_6bps.batch_extract_unit(long_samples)
-```
-
-**Process large datasets in chunks:**
-
-```python
-def process_large_dataset(codec, data_list, batch_size=8):
-    all_results = []
-    for i in range(0, len(data_list), batch_size):
-        batch = data_list[i:i+batch_size]
-        batch_results = codec.batch_synth(batch, local_save=False)
-        all_results.extend(batch_results)
-    return all_results
-
-# Process large dataset efficiently
-large_results = process_large_dataset(encodec_24k_6bps, large_data_list)
-```
-
-## Benchmarking and Leaderboard Contribution
-
-We use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset for standard benchmarking.
-
-### Steps to Evaluate a Codec
-
-1. **Synthesize the Dataset**:
-    Run `dataset_creator.py` to synthesize the test set with your desired codec.
-
-    ```bash
-    python3 dataset_creator.py --dataset voidful/codec-superb-tiny
-    ```
-
-    *Note: This will process all available codecs by default. Use `--specific_codecs` to process only specific codecs (see Incremental Codec Addition below).*
-
-2. **Calculate Metrics**:
-    Run `benchmarking.py` to compute metrics (MEL, PESQ, STOI, F0Corr) for the synthesized audio.
-
-    ```bash
-    # Benchmark all codecs
-    python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
-    
-    # Benchmark only specific codec(s) - useful after adding new codecs
-    python3 benchmarking.py \
-        --dataset datasets/voidful/codec-superb-tiny_synth \
-        --models llmcodec
-    
-    # Benchmark multiple specific codecs
-    python3 benchmarking.py \
-        --dataset datasets/voidful/codec-superb-tiny_synth \
-        --models llmcodec s3tokenizer_v1 s3tokenizer_v1_25hz
-    ```
-
-3. **Submit Results**:
-    After benchmarking, a result file named `datasets_voidful_codec-superb-tiny_synth_evaluation_results_*.json` will be generated in the project root.
-
-    To contribute your results to the leaderboard:
-    - Open a **New Issue** in this repository.
-    - Title it "New Benchmark Result: [Codec Name]".
-    - Attach the generated JSON file or paste its content.
-    - The maintainers will verify and merge your results into the official leaderboard.
-
-### Incremental Codec Addition
-
-**🚀 NEW: Add specific codecs to existing datasets without regenerating everything!**
-
-The `dataset_creator.py` now supports adding specific codec(s) to an existing dataset, saving significant processing time.
-
-#### Add Specific Codecs
+Use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset:
 
 ```bash
-# Add one or more codecs to existing dataset
-python3 dataset_creator.py \
-    --dataset voidful/codec-superb-tiny \
-    --specific_codecs s3tokenizer_v1 s3tokenizer_v1_25hz s3tokenizer_v2_25hz
+python3 scripts/dataset_creator.py --dataset voidful/codec-superb-tiny
 ```
 
-#### Force Regenerate
+### 2. Calculate Metrics
+
+Compute standard metrics (MEL, PESQ, STOI, F0Corr):
 
 ```bash
-# Force regenerate a codec even if it already exists
-python3 dataset_creator.py \
-    --dataset voidful/codec-superb-tiny \
-    --specific_codecs encodec_24k_6bps \
-    --force_regenerate
+python3 scripts/benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
 ```
 
-#### Extract Units Only
+### 3. Submit Results
 
-```bash
-# Extract units without audio synthesis (for encode-only codecs)
-python3 dataset_creator.py \
-    --dataset voidful/codec-superb-tiny \
-    --specific_codecs s3tokenizer_v1 \
-    --extract_unit_only
-```
+1. Locate the generated JSON file: `datasets_voidful_codec-superb-tiny_synth_evaluation_results_*.json`.
+2. Open a **New Issue** in this repository titled `New Benchmark Result: [Codec Name]`.
+3. Attach the JSON file or paste its content.
 
-#### Available Arguments
+---
 
-- `--specific_codecs`: Specify codec(s) to process (space-separated)
-- `--force_regenerate`: Regenerate even if codec exists in dataset
-- `--extract_unit_only`: Only extract units, skip synthesis
-- `--limit`: Limit number of samples to process
-- `--max_duration`: Maximum audio duration in seconds (default: 120)
-- `--push_to_hub`: Push dataset to HuggingFace Hub after processing
-- `--upload_name`: Organization name for Hub upload (default: 'Codec-SUPERB')
+## 🛡️ Encode-Only Codec Support
 
-## Encode-Only Codec Support
+Certain codecs (e.g., `s3tokenizer`) focus on tokenization and do not support reconstruction. Codec-SUPERB handles these automatically:
 
-**🎯 NEW: Proper handling of encode-only codecs (e.g., S3Tokenizer variants)**
+* **Benchmarking**: Automatically skipped during reconstruction evaluation.
+* **API**: Raises `NotImplementedError` if `decode_unit` is called, with clear messaging.
 
-Some codecs are designed for encoding/tokenization only and do not support audio reconstruction. Codec-SUPERB now properly handles these codecs.
+---
 
-### Supported Encode-Only Codecs
-
-- **S3Tokenizer V1 50hz** (`s3tokenizer_v1`) - 0.5 kbps, 50 tokens/sec
-- **S3Tokenizer V1 25hz** (`s3tokenizer_v1_25hz`) - 0.25 kbps, 25 tokens/sec
-- **S3Tokenizer V2 25hz** (`s3tokenizer_v2_25hz`) - 0.25 kbps, 25 tokens/sec
-- **S3Tokenizer V3 25hz** (`s3tokenizer_v3_25hz`) - 0.25 kbps, 25 tokens/sec
-
-### Behavior
-
-**Benchmarking**: Encode-only codecs are automatically skipped during reconstruction benchmarking:
-
-```bash
-$ python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
-
-Skipping s3tokenizer_v1: encode-only codec (no decoder available)
-Skipping s3tokenizer_v1_25hz: encode-only codec (no decoder available)
-```
-
-**Result Format**: Encode-only codecs are marked in results:
-
-```json
-{
-  "s3tokenizer_v1": {
-    "encode_only": true,
-    "message": "This codec only supports encoding. No reconstruction metrics available."
-  }
-}
-```
-
-### Usage Example
-
-```python
-from SoundCodec.codec import load_codec
-
-# Load encode-only codec
-codec = load_codec('s3tokenizer_v1')
-
-# Extract units (supported)
-data = {
-    'audio': {
-        'array': audio_array,
-        'sampling_rate': 16000
-    }
-}
-extracted = codec.extract_unit(data)
-tokens = extracted.unit  # Discrete tokens
-
-# Decode (not supported - raises NotImplementedError)
-try:
-    codec.decode_unit(None)
-except NotImplementedError as e:
-    print(e)  # "S3Tokenizer does not support decoding..."
-```
-
-### Adding Custom Encode-Only Codecs
-
-To create your own encode-only codec:
-
-```python
-from SoundCodec.base_codec.general import BaseCodec
-
-class MyEncodeOnlyCodec(BaseCodec):
-    supports_decode = False  # Mark as encode-only
-    
-    def extract_unit(self, data):
-        # Your encoding logic
-        pass
-    
-    def decode_unit(self, stuff_for_synth):
-        raise NotImplementedError(
-            "This codec does not support decoding."
-        )
-```
-
-## Testing
-
-Run the test suite to verify codec functionality:
+## 🧪 Testing
 
 ```bash
 # Run all tests
 python -m pytest SoundCodec/test/
 
-# Run batch processing tests specifically
-python -m pytest SoundCodec/test/test_batch_processing.py -v
-
-# Run performance benchmarks
-python SoundCodec/test/benchmark_batch_performance.py
-
-# Verify all codecs (Initialization, Synthesis, and 1D detection)
-# We highly encourage using this tool to verify your environment and codec functionality.
-python3 check_all_codecs.py
+# Verify all codecs (Initialization & Synthesis)
+python3 scripts/check_all_codecs.py
 ```
 
-## Citation
+---
 
-If you use this code or result in your paper, please cite our work as:
+## 📝 Citation
 
-```Tex
-@article{wu2024codec,
-  title={Codec-superb: An in-depth analysis of sound codec models},
-  author={Wu, Haibin and Chung, Ho-Lam and Lin, Yi-Cheng and Wu, Yuan-Kuei and Chen, Xuanjun and Pai, Yu-Chi and Wang, Hsiu-Hsuan and Chang, Kai-Wei and Liu, Alexander H and Lee, Hung-yi},
-  journal={arXiv preprint arXiv:2402.13071},
-  year={2024}
-}
-```
+If you use Codec-SUPERB in your research, please cite:
 
-```Tex
-@article{wu2024towards,
-  title={Towards audio language modeling-an overview},
-  author={Wu, Haibin and Chen, Xuanjun and Lin, Yi-Cheng and Chang, Kai-wei and Chung, Ho-Lam and Liu, Alexander H and Lee, Hung-yi},
-  journal={arXiv preprint arXiv:2402.13236},
-  year={2024}
-}
-```
-
-```Tex
+```bibtex
 @inproceedings{wu-etal-2024-codec,
     title = "Codec-{SUPERB}: An In-Depth Analysis of Sound Codec Models",
-    author = "Wu, Haibin  and
-      Chung, Ho-Lam  and
-      Lin, Yi-Cheng  and
-      Wu, Yuan-Kuei  and
-      Chen, Xuanjun  and
-      Pai, Yu-Chi  and
-      Wang, Hsiu-Hsuan  and
-      Chang, Kai-Wei  and
-      Liu, Alexander  and
-      Lee, Hung-yi",
-    editor = "Ku, Lun-Wei  and
-      Martins, Andre  and
-      Srikumar, Vivek",
+    author = "Wu, Haibin and Chung, Ho-Lam and Lin, Yi-Cheng and Wu, Yuan-Kuei and Chen, Xuanjun and Pai, Yu-Chi and Wang, Hsiu-Hsuan and Chang, Kai-Wei and Liu, Alexander and Lee, Hung-yi",
     booktitle = "Findings of the Association for Computational Linguistics: ACL 2024",
-    month = aug,
     year = "2024",
-    address = "Bangkok, Thailand",
-    publisher = "Association for Computational Linguistics",
     url = "https://aclanthology.org/2024.findings-acl.616",
     doi = "10.18653/v1/2024.findings-acl.616",
     pages = "10330--10348",
 }
 ```
 
-## Contribution
+---
 
-Contributions are highly encouraged, whether it's through adding new codec models, expanding the dataset collection, or
-enhancing the benchmarking framework. Please see `CONTRIBUTING.md` for more details.
+## 🤝 Contribution & License
 
-## License
+Contributions are highly encouraged! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+This project is licensed under the **MIT License**.
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+---
 
-## Reference Sound Codec Repositories
-
-- <https://github.com/ZhangXInFD/SpeechTokenizer>
-- <https://github.com/descriptinc/descript-audio-codec>
-- <https://github.com/facebookresearch/encodec>
-- <https://github.com/yangdongchao/AcademiCodec>
-- <https://github.com/facebookresearch/AudioDec>
-- <https://github.com/alibaba-damo-academy/FunCodec>
-- <https://github.com/SWivid/AUV>
-- <https://github.com/Aria-K-Alethia/BigCodec>
-- <https://github.com/xingchensong/S3Tokenizer>
-- <https://github.com/mesolitica/UniCodec-fix>
+<div align="center">
+Developed with ❤️ by the Codec-SUPERB Team
+</div>

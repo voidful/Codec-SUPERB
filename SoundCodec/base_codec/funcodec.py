@@ -15,7 +15,7 @@ class FunCodecBaseCodec(BaseCodec):
         except:
             raise Exception(
                 "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git")
-        os.makedirs("funcodec", exist_ok=True)
+        os.makedirs("external_codecs/funcodec", exist_ok=True)
         super().__init__()
         self.config()
 
