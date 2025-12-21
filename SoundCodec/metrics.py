@@ -2,6 +2,14 @@ import typing
 from typing import List
 
 import librosa
+import os
+# Critical: Set MKL env vars BEFORE importing torch/numpy to avoid SVML errors
+os.environ.setdefault('MKL_SERVICE_FORCE_INTEL', '1')
+os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
+os.environ.setdefault('MKL_THREADING_LAYER', 'GNU')
+os.environ.setdefault('OMP_NUM_THREADS', '1')
+os.environ.setdefault('MKL_NUM_THREADS', '1')
+
 import torch
 from audiotools import AudioSignal
 from audiotools import STFTParams
