@@ -2,7 +2,5 @@ from SoundCodec.base_codec.s3tokenizer import S3TokenizerBaseCodec
 
 class Codec(S3TokenizerBaseCodec):
     def config(self):
-        # S3Tokenizer V1 50hz (default version)
-        self.model_name = "speech_tokenizer_v1"
+        self.model_name = "speech_tokenizer_v1_25hz"
         super().config()
-

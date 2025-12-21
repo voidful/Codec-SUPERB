@@ -119,6 +119,9 @@ class BaseCodec(ABC):
             self.device = 'cpu'
         self.sampling_rate = None
         self.setting = None
+        # Default to True, subclasses can override to False for encode-only codecs
+        if not hasattr(self, 'supports_decode'):
+            self.supports_decode = True
         self.config()
     
     @abstractmethod
@@ -160,6 +163,19 @@ class BaseCodec(ABC):
         """Synthesize audio from data for a single sample."""
         extracted_unit = self.extract_unit(data)
         data['unit'] = extracted_unit.unit
+        
+        # Check if codec supports decoding
+        if not self.supports_decode:
+            # For encode-only codecs, return data with unit but no audio reconstruction
+            if local_save:
+                # Don't save audio for encode-only codecs
+                pass
+            else:
+                # Mark that audio reconstruction is not available
+                data['audio']['array'] = None
+                data['encode_only'] = True
+            return data
+        
         audio_values = self.decode_unit(extracted_unit.stuff_for_synth)
         if local_save:
             audio_id = data.get('id', str(uuid.uuid4()))
@@ -208,6 +224,17 @@ class BaseCodec(ABC):
         Default implementation uses batch_extract_unit and batch_decode_unit.
         """
         batch_extracted_unit = self.batch_extract_unit(data_list)
+        
+        # Check if codec supports decoding
+        if not self.supports_decode:
+            # For encode-only codecs, return data with units but no audio reconstruction
+            for i, (data, unit) in enumerate(zip(data_list, batch_extracted_unit.units)):
+                data['unit'] = unit
+                if not local_save:
+                    data['audio']['array'] = None
+                    data['encode_only'] = True
+            return data_list
+        
         batch_audio_values = self.batch_decode_unit(batch_extracted_unit)
         
         # Update the data list with results
