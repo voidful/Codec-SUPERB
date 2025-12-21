@@ -1,3 +1,9 @@
+import os
+# Fix for LLVM ERROR: Symbol not found: __svml_cosf8_ha
+# This error occurs with Intel MKL on some systems
+os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
 import argparse
 import json
 import gc
