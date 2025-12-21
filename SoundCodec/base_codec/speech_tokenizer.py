@@ -22,13 +22,13 @@ class SpeechTokenizerBaseCodec(BaseCodec):
     def config(self):
         nlp2.download_file(
             'https://huggingface.co/fnlp/SpeechTokenizer/raw/main/speechtokenizer_hubert_avg/config.json',
-            'speechtokenizer_hubert_avg')
-        self.config_path = "speechtokenizer_hubert_avg/config.json"
+            'external_codecs/speechtokenizer_hubert_avg')
+        self.config_path = "external_codecs/speechtokenizer_hubert_avg/config.json"
 
         nlp2.download_file(
             'https://huggingface.co/fnlp/SpeechTokenizer/resolve/main/speechtokenizer_hubert_avg/SpeechTokenizer.pt',
-            "speechtokenizer_hubert_avg")
-        self.ckpt_path = "speechtokenizer_hubert_avg/SpeechTokenizer.pt"
+            "external_codecs/speechtokenizer_hubert_avg")
+        self.ckpt_path = "external_codecs/speechtokenizer_hubert_avg/SpeechTokenizer.pt"
 
     @torch.no_grad()
     def extract_unit(self, data):
