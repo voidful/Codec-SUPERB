@@ -80,6 +80,7 @@ values = {
     'audiodec_24k_320d': {'bps': 6, 'tps': 75},  # Assumed 6kbps from 320d?
     'auv': {'bps': 0.5, 'tps': 50},
     'bigcodec_1k': {'bps': 1, 'tps': 80},
+    'llmcodec': {'bps': 0.5, 'tps': 50},  # Based on AUV architecture
     'dac_16k': {'bps': 6, 'tps': 50},
     'dac_24k': {'bps': 24, 'tps': 75},
     'dac_44k': {'bps': 8, 'tps': 86},
