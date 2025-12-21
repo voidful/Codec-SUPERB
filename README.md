@@ -247,7 +247,18 @@ We use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/c
     Run `benchmarking.py` to compute metrics (MEL, PESQ, STOI, F0Corr) for the synthesized audio.
 
     ```bash
+    # Benchmark all codecs
     python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+    
+    # Benchmark only specific codec(s) - useful after adding new codecs
+    python3 benchmarking.py \
+        --dataset datasets/voidful/codec-superb-tiny_synth \
+        --models llmcodec
+    
+    # Benchmark multiple specific codecs
+    python3 benchmarking.py \
+        --dataset datasets/voidful/codec-superb-tiny_synth \
+        --models llmcodec s3tokenizer_v1 s3tokenizer_v1_25hz
     ```
 
 3. **Submit Results**:
