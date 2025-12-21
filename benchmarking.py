@@ -33,7 +33,17 @@ def safe_load_audio(audio_entry):
     try:
         # If it's already a dict with array (decoded)
         if isinstance(audio_entry, dict) and 'array' in audio_entry:
-            return audio_entry['array'], audio_entry['sampling_rate']
+            array = audio_entry['array']
+            sr = audio_entry['sampling_rate']
+            
+            # Critical: Ensure array is numpy on CPU for multiprocessing
+            # CUDA tensors cannot be serialized across processes
+            if hasattr(array, 'cpu'):
+                array = array.cpu().numpy()
+            elif not isinstance(array, np.ndarray):
+                array = np.array(array)
+            
+            return array, sr
 
         # If it's the raw dict (decode=False)
         if isinstance(audio_entry, dict):
