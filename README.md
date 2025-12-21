@@ -18,6 +18,9 @@ preserving and enhancing speech information quality.
   - [Single Audio Processing](#single-audio-processing)
   - [Batch Audio Processing](#batch-audio-processing)
   - [Performance Comparison](#performance-comparison)
+- [Benchmarking and Leaderboard](#benchmarking-and-leaderboard-contribution)
+  - [Incremental Codec Addition](#incremental-codec-addition)
+- [Encode-Only Codec Support](#encode-only-codec-support)
 - [Testing](#testing)
 - [Contribution](#contribution)
 - [License](#license)
@@ -225,6 +228,162 @@ def process_large_dataset(codec, data_list, batch_size=8):
 large_results = process_large_dataset(encodec_24k_6bps, large_data_list)
 ```
 
+## Benchmarking and Leaderboard Contribution
+
+We use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset for standard benchmarking.
+
+### Steps to Evaluate a Codec
+
+1. **Synthesize the Dataset**:
+    Run `dataset_creator.py` to synthesize the test set with your desired codec.
+
+    ```bash
+    python3 dataset_creator.py --dataset voidful/codec-superb-tiny
+    ```
+
+    *Note: This will process all available codecs by default. Use `--specific_codecs` to process only specific codecs (see Incremental Codec Addition below).*
+
+2. **Calculate Metrics**:
+    Run `benchmarking.py` to compute metrics (MEL, PESQ, STOI, F0Corr) for the synthesized audio.
+
+    ```bash
+    python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+    ```
+
+3. **Submit Results**:
+    After benchmarking, a result file named `datasets_voidful_codec-superb-tiny_synth_evaluation_results_*.json` will be generated in the project root.
+
+    To contribute your results to the leaderboard:
+    - Open a **New Issue** in this repository.
+    - Title it "New Benchmark Result: [Codec Name]".
+    - Attach the generated JSON file or paste its content.
+    - The maintainers will verify and merge your results into the official leaderboard.
+
+### Incremental Codec Addition
+
+**🚀 NEW: Add specific codecs to existing datasets without regenerating everything!**
+
+The `dataset_creator.py` now supports adding specific codec(s) to an existing dataset, saving significant processing time.
+
+#### Add Specific Codecs
+
+```bash
+# Add one or more codecs to existing dataset
+python3 dataset_creator.py \
+    --dataset voidful/codec-superb-tiny \
+    --specific_codecs s3tokenizer_v1 s3tokenizer_v1_25hz s3tokenizer_v2_25hz
+```
+
+#### Force Regenerate
+
+```bash
+# Force regenerate a codec even if it already exists
+python3 dataset_creator.py \
+    --dataset voidful/codec-superb-tiny \
+    --specific_codecs encodec_24k_6bps \
+    --force_regenerate
+```
+
+#### Extract Units Only
+
+```bash
+# Extract units without audio synthesis (for encode-only codecs)
+python3 dataset_creator.py \
+    --dataset voidful/codec-superb-tiny \
+    --specific_codecs s3tokenizer_v1 \
+    --extract_unit_only
+```
+
+#### Available Arguments
+
+- `--specific_codecs`: Specify codec(s) to process (space-separated)
+- `--force_regenerate`: Regenerate even if codec exists in dataset
+- `--extract_unit_only`: Only extract units, skip synthesis
+- `--limit`: Limit number of samples to process
+- `--max_duration`: Maximum audio duration in seconds (default: 120)
+- `--push_to_hub`: Push dataset to HuggingFace Hub after processing
+- `--upload_name`: Organization name for Hub upload (default: 'Codec-SUPERB')
+
+## Encode-Only Codec Support
+
+**🎯 NEW: Proper handling of encode-only codecs (e.g., S3Tokenizer variants)**
+
+Some codecs are designed for encoding/tokenization only and do not support audio reconstruction. Codec-SUPERB now properly handles these codecs.
+
+### Supported Encode-Only Codecs
+
+- **S3Tokenizer V1 50hz** (`s3tokenizer_v1`) - 0.5 kbps, 50 tokens/sec
+- **S3Tokenizer V1 25hz** (`s3tokenizer_v1_25hz`) - 0.25 kbps, 25 tokens/sec
+- **S3Tokenizer V2 25hz** (`s3tokenizer_v2_25hz`) - 0.25 kbps, 25 tokens/sec
+- **S3Tokenizer V3 25hz** (`s3tokenizer_v3_25hz`) - 0.25 kbps, 25 tokens/sec
+
+### Behavior
+
+**Benchmarking**: Encode-only codecs are automatically skipped during reconstruction benchmarking:
+
+```bash
+$ python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+
+Skipping s3tokenizer_v1: encode-only codec (no decoder available)
+Skipping s3tokenizer_v1_25hz: encode-only codec (no decoder available)
+```
+
+**Result Format**: Encode-only codecs are marked in results:
+
+```json
+{
+  "s3tokenizer_v1": {
+    "encode_only": true,
+    "message": "This codec only supports encoding. No reconstruction metrics available."
+  }
+}
+```
+
+### Usage Example
+
+```python
+from SoundCodec.codec import load_codec
+
+# Load encode-only codec
+codec = load_codec('s3tokenizer_v1')
+
+# Extract units (supported)
+data = {
+    'audio': {
+        'array': audio_array,
+        'sampling_rate': 16000
+    }
+}
+extracted = codec.extract_unit(data)
+tokens = extracted.unit  # Discrete tokens
+
+# Decode (not supported - raises NotImplementedError)
+try:
+    codec.decode_unit(None)
+except NotImplementedError as e:
+    print(e)  # "S3Tokenizer does not support decoding..."
+```
+
+### Adding Custom Encode-Only Codecs
+
+To create your own encode-only codec:
+
+```python
+from SoundCodec.base_codec.general import BaseCodec
+
+class MyEncodeOnlyCodec(BaseCodec):
+    supports_decode = False  # Mark as encode-only
+    
+    def extract_unit(self, data):
+        # Your encoding logic
+        pass
+    
+    def decode_unit(self, stuff_for_synth):
+        raise NotImplementedError(
+            "This codec does not support decoding."
+        )
+```
+
 ## Testing
 
 Run the test suite to verify codec functionality:
@@ -245,7 +404,9 @@ python3 check_all_codecs.py
 ```
 
 ## Citation
+
 If you use this code or result in your paper, please cite our work as:
+
 ```Tex
 @article{wu2024codec,
   title={Codec-superb: An in-depth analysis of sound codec models},
@@ -254,6 +415,7 @@ If you use this code or result in your paper, please cite our work as:
   year={2024}
 }
 ```
+
 ```Tex
 @article{wu2024towards,
   title={Towards audio language modeling-an overview},
@@ -262,6 +424,7 @@ If you use this code or result in your paper, please cite our work as:
   year={2024}
 }
 ```
+
 ```Tex
 @inproceedings{wu-etal-2024-codec,
     title = "Codec-{SUPERB}: An In-Depth Analysis of Sound Codec Models",
@@ -288,33 +451,6 @@ If you use this code or result in your paper, please cite our work as:
     pages = "10330--10348",
 }
 ```
-## Benchmarking and Leaderboard Contribution
-
-We use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset for standard benchmarking.
-
-### Steps to Evaluate a Codec
-
-1.  **Synthesize the Dataset**:
-    Run `dataset_creator.py` to synthesize the test set with your desired codec.
-    ```bash
-    python3 dataset_creator.py --dataset voidful/codec-superb-tiny
-    ```
-    *Note: This will process all available codecs by default. To limit to a specific codec, you can modify the script or use a custom filter.*
-
-2.  **Calculate Metrics**:
-    Run `benchmarking.py` to compute metrics (MEL, PESQ, STOI, F0Corr) for the synthesized audio.
-    ```bash
-    python3 benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
-    ```
-
-3.  **Submit Results**:
-    After benchmarking, a result file named `datasets_voidful_codec-superb-tiny_synth_evaluation_results_*.json` will be generated in the project root.
-    
-    To contribute your results to the leaderboard:
-    - Open a **New Issue** in this repository.
-    - Title it "New Benchmark Result: [Codec Name]".
-    - Attach the generated JSON file or paste its content.
-    - The maintainers will verify and merge your results into the official leaderboard.
 
 ## Contribution
 
@@ -325,15 +461,15 @@ enhancing the benchmarking framework. Please see `CONTRIBUTING.md` for more deta
 
 This project is licensed under the MIT License - see the `LICENSE` file for details.
 
-## Reference Sound Codec Repositories：
+## Reference Sound Codec Repositories
 
-- https://github.com/ZhangXInFD/SpeechTokenizer
-- https://github.com/descriptinc/descript-audio-codec
-- https://github.com/facebookresearch/encodec
-- https://github.com/yangdongchao/AcademiCodec
-- https://github.com/facebookresearch/AudioDec
-- https://github.com/alibaba-damo-academy/FunCodec
-- https://github.com/SWivid/AUV
-- https://github.com/Aria-K-Alethia/BigCodec
-- https://github.com/xingchensong/S3Tokenizer
-- https://github.com/mesolitica/UniCodec-fix
+- <https://github.com/ZhangXInFD/SpeechTokenizer>
+- <https://github.com/descriptinc/descript-audio-codec>
+- <https://github.com/facebookresearch/encodec>
+- <https://github.com/yangdongchao/AcademiCodec>
+- <https://github.com/facebookresearch/AudioDec>
+- <https://github.com/alibaba-damo-academy/FunCodec>
+- <https://github.com/SWivid/AUV>
+- <https://github.com/Aria-K-Alethia/BigCodec>
+- <https://github.com/xingchensong/S3Tokenizer>
+- <https://github.com/mesolitica/UniCodec-fix>
