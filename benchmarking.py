@@ -1,8 +1,12 @@
 import os
 # Fix for LLVM ERROR: Symbol not found: __svml_cosf8_ha
-# This error occurs with Intel MKL on some systems
+# This error occurs with Intel MKL on some systems during metrics computation
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['MKL_THREADING_LAYER'] = 'GNU'
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['NUMEXPR_NUM_THREADS'] = '1'
 
 import argparse
 import json
@@ -22,6 +26,19 @@ from tqdm import tqdm
 from SoundCodec.base_codec.general import pad_arrays_to_match
 from SoundCodec.metrics import get_metrics
 import datasets
+
+# Additional fix for SVML issues - disable NumPy threading
+try:
+    import numpy as np
+    # Disable threading in NumPy to avoid SVML symbol issues
+    np.seterr(all='ignore')  # Ignore numerical warnings
+    # Try to set thread count (may not work on all NumPy builds)
+    try:
+        np.set_num_threads(1)
+    except:
+        pass
+except:
+    pass
 
 # The previous hacks are removed as they were ineffective against datasets behavior.
 
