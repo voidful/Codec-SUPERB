@@ -140,7 +140,16 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         if limit is not None:
             args_list = args_list[:limit]
 
-        metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize)
+        # Use sequential processing if multiprocessing is disabled or if max_workers is 1
+        if max_workers == 1:
+            print(f"Using sequential processing (max_workers=1)")
+            metrics_results = []
+            for args in tqdm(args_list, desc=f"Processing {model}"):
+                result = process_entry(args)
+                metrics_results.append(result)
+        else:
+            # Use multiprocessing
+            metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize)
         metrics_results = [metrics for metrics in metrics_results if metrics is not None]
         # Process Dataset END
 
