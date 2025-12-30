@@ -120,18 +120,49 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     else:
         c = load_dataset(dataset_name, streaming=is_stream)
     
-    # Disable automatic decoding to bypass torchcodec
-    for split in c.keys():
-        c[split] = c[split].cast_column("audio", datasets.Audio(decode=False))
-
-    models = [key for key in c.keys() if key != "original"]
+    # Check if this is a pre-synthesized dataset (has 'original' split) or original dataset
+    is_presynthesized = 'original' in c.keys()
     
-    # Cache original entries to avoid iterator exhaustion when processing multiple models
-    print("Caching original dataset entries...")
-    original_entries = list(c['original'])
-    if limit is not None:
-        original_entries = original_entries[:limit]
-    print(f"Cached {len(original_entries)} original entries")
+    if is_presynthesized:
+        # Original mode: dataset already has original and codec splits
+        print("Using pre-synthesized dataset mode")
+        # Disable automatic decoding to bypass torchcodec
+        for split in c.keys():
+            c[split] = c[split].cast_column("audio", datasets.Audio(decode=False))
+        
+        models = [key for key in c.keys() if key != "original"]
+        
+        # Cache original entries
+        print("Caching original dataset entries...")
+        original_entries = list(c['original'])
+        if limit is not None:
+            original_entries = original_entries[:limit]
+        print(f"Cached {len(original_entries)} original entries")
+    else:
+        # New mode: apply codecs on-the-fly to original dataset
+        print("Using direct codec evaluation mode")
+        if specific_models is None or len(specific_models) == 0:
+            raise ValueError("Must specify --models when using direct evaluation mode")
+        
+        models = specific_models
+        
+        # Combine all splits into one dataset
+        all_entries = []
+        for split_name in c.keys():
+            split_data = c[split_name]
+            split_data = split_data.cast_column("audio", datasets.Audio(decode=False))
+            split_list = list(split_data)
+            # Add category field if not present
+            for entry in split_list:
+                if 'category' not in entry:
+                    entry['category'] = split_name
+            all_entries.extend(split_list)
+        
+        if limit is not None:
+            all_entries = all_entries[:limit]
+        
+        original_entries = all_entries
+        print(f"Loaded {len(original_entries)} samples from {len(c.keys())} splits")
     
     # Warn about memory usage for large datasets
     if len(original_entries) > 5000:
@@ -163,14 +194,41 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         print(f"Evaluating metrics for model: {model}")
         model_start_time = time.time()
 
-        # Get model entries (also cache to avoid iterator issues)
-        model_entries = list(c[model])
-        if limit is not None:
-            model_entries = model_entries[:limit]
+        if is_presynthesized:
+            # Original mode: use pre-synthesized model entries
+            model_entries = list(c[model])
+            if limit is not None:
+                model_entries = model_entries[:limit]
 
-        # Process Dataset with Multi-Processing
-        args_list = [(original_iter, model_iter, max_duration, save_audio) for original_iter, model_iter in
-                     zip(original_entries, model_entries)]
+            # Process Dataset with Multi-Processing
+            args_list = [(original_iter, model_iter, max_duration, save_audio) for original_iter, model_iter in
+                         zip(original_entries, model_entries)]
+        else:
+            # New mode: apply codec on-the-fly
+            from SoundCodec.codec import load_codec
+            print(f"Loading codec: {model}")
+            codec_instance = load_codec(model)
+            
+            # Create model entries by encoding and decoding original audio
+            print(f"Encoding and decoding {len(original_entries)} samples with {model}...")
+            model_entries = []
+            for entry in tqdm(original_entries, desc=f"Synthesizing with {model}"):
+                try:
+                    # Synthesize audio using the codec
+                    synthesized = codec_instance.synth(entry, local_save=False)
+                    model_entries.append(synthesized)
+                except Exception as e:
+                    print(f"Error synthesizing sample: {e}")
+                    # Add empty entry to maintain alignment
+                    model_entries.append({'audio': {'array': None, 'sampling_rate': None}})
+            
+            # Process Dataset with Multi-Processing
+            args_list = [(original_iter, model_iter, max_duration, save_audio) for original_iter, model_iter in
+                         zip(original_entries, model_entries)]
+            
+            # Clean up codec instance
+            del codec_instance
+            gc.collect()
 
         # Use sequential processing if multiprocessing is disabled or if max_workers is 1
         if max_workers == 1:
