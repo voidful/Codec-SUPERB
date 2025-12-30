@@ -21,8 +21,11 @@ import datasets
 
 
 def default_converter(o):
-    if isinstance(o, np.float32):
-        return float(o)
+    """Convert numpy types to native Python types for JSON serialization."""
+    if isinstance(o, (np.integer, np.floating)):
+        return o.item()
+    elif isinstance(o, np.ndarray):
+        return o.tolist()
     raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
 
 
@@ -156,7 +159,12 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
 
         # Aggregate the metrics
         aggregated_metrics = defaultdict(lambda: defaultdict(list))
-        for metrics, entry in zip(metrics_results, c['original']):
+        # Get the original entries that were actually processed
+        original_entries = list(c['original'])
+        if limit is not None:
+            original_entries = original_entries[:limit]
+        
+        for metrics, entry in zip(metrics_results, original_entries):
             if metrics:
                 category = entry.get('category', 'overall')
                 for k, v in metrics.items():
@@ -194,8 +202,6 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default="AudioDecBenchmark/librispeech_asr_dummy_synth",
                         help='Name of the dataset to evaluate')
     parser.add_argument('--streaming', action='store_true', help='Evaluate in streaming mode')
-    parser.add_argument('--batch', type=int, default=100,
-                        help='Batch size for processing the dataset')
     parser.add_argument('--models', nargs='*', help='Specific models to evaluate')
     parser.add_argument('--max_duration', type=int, default=120,
                         help='Maximum duration of audio recordings in seconds')
