@@ -334,7 +334,6 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             
             # Clean up large data structures to free memory before metrics calculation
             del model_entries
-            del original_entries
             
             # Clean up codec instance
             del codec_instance
