@@ -352,7 +352,14 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         gc.collect()
         print(f"RAM used after processing {model}: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
         print(f"Time taken for {model}: {time.time() - model_start_time:.2f} seconds")
-        print(model_result)
+        
+        # Print metrics summary (exclude audio_samples to avoid verbose output)
+        print("\nMetrics Summary:")
+        for category, metrics in model_result.items():
+            if category != 'audio_samples':
+                print(f"  {category}: {metrics}")
+        if save_audio and 'audio_samples' in model_result:
+            print(f"  Audio samples saved: {len(model_result['audio_samples'])} samples")
         print()
 
     print(f"Total execution time: {time.time() - start_time:.2f} seconds")
