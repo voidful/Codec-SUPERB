@@ -228,7 +228,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         # Report statistics
         total_samples = len(metrics_results)
         success_count = total_samples - failed_count
-        print(f\"Processed: {success_count}/{total_samples} samples successfully ({failed_count} failed)\")
+        print(f"Processed: {success_count}/{total_samples} samples successfully ({failed_count} failed)")
         gc.collect()
         print(f"RAM used after processing {model}: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
         print(f"Time taken for {model}: {time.time() - model_start_time:.2f} seconds")
