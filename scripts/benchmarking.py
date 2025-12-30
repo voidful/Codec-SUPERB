@@ -125,11 +125,28 @@ def compute_metrics(original, model, max_duration, save_audio=False):
     metrics = get_metrics(original_signal, model_signal)
     
     # Optionally include audio data
+    # Optionally include audio data
     if save_audio:
+        # Optimization: Return paths instead of arrays to save RAM
+        # If original/model inputs have paths, use them.
+        original_path = None
+        if isinstance(original, dict) and 'audio' in original:
+            if isinstance(original['audio'], dict):
+                 original_path = original['audio'].get('path')
+            elif isinstance(original['audio'], str):
+                 original_path = original['audio']
+        
+        reconstructed_path = None
+        if isinstance(model, dict) and 'audio' in model:
+            if isinstance(model['audio'], dict):
+                 reconstructed_path = model['audio'].get('path')
+            elif isinstance(model['audio'], str):
+                 reconstructed_path = model['audio']
+
         return {
             'metrics': metrics,
-            'original_audio': original_arrays.tolist() if isinstance(original_arrays, np.ndarray) else original_arrays,
-            'reconstructed_audio': resynth_array.tolist() if isinstance(resynth_array, np.ndarray) else resynth_array,
+            'original_audio': original_path if original_path else (original_arrays.tolist() if isinstance(original_arrays, np.ndarray) else original_arrays),
+            'reconstructed_audio': reconstructed_path if reconstructed_path else (resynth_array.tolist() if isinstance(resynth_array, np.ndarray) else resynth_array),
             'sampling_rate': sampling_rate
         }
     
@@ -139,6 +156,10 @@ def compute_metrics(original, model, max_duration, save_audio=False):
 def process_entry(args):
     original_iter, model_iter, max_duration, save_audio = args
     try:
+def process_entry(args):
+    original_iter, model_iter, max_duration, save_audio = args
+    try:
+        # save_audio is True, so compute_metrics will try to return paths if available
         result = compute_metrics(original_iter, model_iter, max_duration, save_audio)
         if result is not None:
             return result
@@ -385,7 +406,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         result_data[model] = model_result
         
         # Report statistics
-        total_samples = len(metrics_results)
+        total_samples = len(entries_metadata)
         success_count = total_samples - failed_count
         print(f"Processed: {success_count}/{total_samples} samples successfully ({failed_count} failed)")
         gc.collect()
