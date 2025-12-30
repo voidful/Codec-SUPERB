@@ -21,6 +21,52 @@ def pad_arrays_to_match(array1, array2):
     return array1_padded, array2_padded
 
 
+def resample_audio(audio_array, orig_sr, target_sr):
+    """
+    Resample audio from orig_sr to target_sr.
+    
+    Args:
+        audio_array: numpy array or torch tensor of shape (samples,) or (samples, channels)
+        orig_sr: original sampling rate (int)
+        target_sr: target sampling rate (int)
+    
+    Returns:
+        resampled audio as numpy array
+    """
+    if orig_sr == target_sr:
+        return audio_array
+    
+    # Convert to numpy if torch tensor
+    if isinstance(audio_array, torch.Tensor):
+        audio_array = audio_array.cpu().numpy()
+    
+    # Use librosa for resampling
+    try:
+        import librosa
+        # librosa.resample expects (n_samples,) or (n_channels, n_samples)
+        # Handle both shapes
+        if audio_array.ndim == 1:
+            resampled = librosa.resample(audio_array, orig_sr=orig_sr, target_sr=target_sr)
+        elif audio_array.ndim == 2:
+            # If shape is (samples, channels), transpose to (channels, samples)
+            if audio_array.shape[1] < audio_array.shape[0]:
+                audio_array = audio_array.T
+            # Resample each channel
+            resampled = np.array([
+                librosa.resample(channel, orig_sr=orig_sr, target_sr=target_sr)
+                for channel in audio_array
+            ])
+            # Transpose back if needed
+            if audio_array.shape[1] < audio_array.shape[0]:
+                resampled = resampled.T
+        else:
+            raise ValueError(f"Unexpected audio array shape: {audio_array.shape}")
+        
+        return resampled
+    except ImportError:
+        raise ImportError("librosa is required for resampling. Install with: pip install librosa")
+
+
 @dataclass
 class ExtractedUnit:
     unit: torch.Tensor
@@ -160,30 +206,69 @@ class BaseCodec(ABC):
             return False
 
     def synth(self, data, local_save=True):
-        """Synthesize audio from data for a single sample."""
-        extracted_unit = self.extract_unit(data)
-        data['unit'] = extracted_unit.unit
+        """Synthesize audio from data for a single sample with automatic resampling."""
+        # Get original sampling rate
+        orig_sr = data.get('audio', {}).get('sampling_rate')
+        codec_sr = self.sampling_rate
+        
+        # Prepare data for codec processing
+        if orig_sr and codec_sr and orig_sr != codec_sr:
+            # Need to resample to codec's native sampling rate
+            orig_audio = data['audio']['array']
+            if isinstance(orig_audio, torch.Tensor):
+                orig_audio = orig_audio.cpu().numpy()
+            
+            # Resample to codec SR
+            resampled_audio = resample_audio(orig_audio, orig_sr, codec_sr)
+            
+            # Create temporary data with resampled audio
+            temp_data = data.copy()
+            temp_data['audio'] = {
+                'array': resampled_audio,
+                'sampling_rate': codec_sr
+            }
+        else:
+            temp_data = data
+            if not orig_sr:
+                # If no original SR, assume codec SR
+                orig_sr = codec_sr
+        
+        # Extract unit and decode at codec's native SR
+        extracted_unit = self.extract_unit(temp_data)
+        temp_data['unit'] = extracted_unit.unit
         
         # Check if codec supports decoding
         if not self.supports_decode:
             # For encode-only codecs, return data with unit but no audio reconstruction
             if local_save:
-                # Don't save audio for encode-only codecs
                 pass
             else:
-                # Mark that audio reconstruction is not available
                 data['audio']['array'] = None
                 data['encode_only'] = True
             return data
         
+        # Decode at codec SR
         audio_values = self.decode_unit(extracted_unit.stuff_for_synth)
+        
+        # Convert to numpy if needed
+        if isinstance(audio_values, torch.Tensor):
+            audio_values = audio_values.cpu().numpy()
+        
+        # Resample back to original SR if needed
+        if orig_sr != codec_sr:
+            audio_values = resample_audio(audio_values, codec_sr, orig_sr)
+        
+        # Save or return
         if local_save:
             audio_id = data.get('id', str(uuid.uuid4()))
             audio_path = f"dummy_{self.setting}/{audio_id}.wav"
-            save_audio(audio_values, audio_path, self.sampling_rate)
+            save_audio(audio_values, audio_path, orig_sr)  # Save at original SR
             data['audio'] = audio_path
         else:
-            data['audio']['array'] = audio_values
+            data['audio'] = {
+                'array': audio_values,
+                'sampling_rate': orig_sr  # CRITICAL: preserve original SR
+            }
         return data
     
     def batch_extract_unit(self, data_list: List[dict]) -> BatchExtractedUnit:
