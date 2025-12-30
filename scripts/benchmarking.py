@@ -110,6 +110,13 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         c[split] = c[split].cast_column("audio", datasets.Audio(decode=False))
 
     models = [key for key in c.keys() if key != "original"]
+    
+    # Cache original entries to avoid iterator exhaustion when processing multiple models
+    print("Caching original dataset entries...")
+    original_entries = list(c['original'])
+    if limit is not None:
+        original_entries = original_entries[:limit]
+    print(f"Cached {len(original_entries)} original entries")
 
     result_data = {}
     for model in models:
@@ -137,12 +144,14 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         print(f"Evaluating metrics for model: {model}")
         model_start_time = time.time()
 
+        # Get model entries (also cache to avoid iterator issues)
+        model_entries = list(c[model])
+        if limit is not None:
+            model_entries = model_entries[:limit]
+
         # Process Dataset with Multi-Processing
         args_list = [(original_iter, model_iter, max_duration) for original_iter, model_iter in
-                     zip(c['original'], c[model])]
-        
-        if limit is not None:
-            args_list = args_list[:limit]
+                     zip(original_entries, model_entries)]
 
         # Use sequential processing if multiprocessing is disabled or if max_workers is 1
         if max_workers == 1:
@@ -159,10 +168,6 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
 
         # Aggregate the metrics
         aggregated_metrics = defaultdict(lambda: defaultdict(list))
-        # Get the original entries that were actually processed
-        original_entries = list(c['original'])
-        if limit is not None:
-            original_entries = original_entries[:limit]
         
         for metrics, entry in zip(metrics_results, original_entries):
             if metrics:
