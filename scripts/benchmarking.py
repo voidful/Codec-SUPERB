@@ -297,7 +297,8 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         audio_samples = [] if save_audio else None
         failed_count = 0
         
-        for idx, (result, entry) in enumerate(zip(metrics_results, original_entries)):
+        print(f"\nAggregating metrics for {model}...")
+        for idx, (result, entry) in enumerate(tqdm(zip(metrics_results, original_entries), total=len(metrics_results), desc="Aggregating metrics")):
             if result:
                 category = entry.get('category', 'overall')
                 
@@ -359,10 +360,28 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
     output_file_name = f"{base_filename}{timestamp}.json"
 
+    # Create a copy without audio_samples for JSON output
+    result_data_for_json = {}
+    for model, data in result_data.items():
+        result_data_for_json[model] = {k: v for k, v in data.items() if k != 'audio_samples'}
+    
     with open(output_file_name, 'w') as out_file:
-        json.dump(result_data, out_file, indent=4, default=default_converter)
+        json.dump(result_data_for_json, out_file, indent=4, default=default_converter)
 
-    print(f"Results saved to {output_file_name}")
+    print(f"\nResults saved to {output_file_name}")
+    
+    # Print final results to console
+    print("\n" + "="*80)
+    print("FINAL RESULTS")
+    print("="*80)
+    for model, data in result_data.items():
+        print(f"\n{model.upper()}:")
+        for category, metrics in data.items():
+            if category != 'audio_samples':
+                print(f"  {category}:")
+                for metric_name, value in metrics.items():
+                    print(f"    {metric_name}: {value:.6f}" if isinstance(value, float) else f"    {metric_name}: {value}")
+    print("\n" + "="*80)
 
 
 if __name__ == "__main__":
