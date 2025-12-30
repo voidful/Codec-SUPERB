@@ -216,8 +216,29 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         if limit is not None:
             all_entries = all_entries[:limit]
         
-        original_entries = all_entries
-        print(f"Loaded {len(original_entries)} samples from {len(c.keys())} splits")
+        # Save original entries to disk to save RAM
+        print(f"Caching {len(all_entries)} original audio samples to disk...")
+        os.makedirs("cache_original", exist_ok=True)
+        original_entries = []
+        for i, entry in enumerate(tqdm(all_entries, desc="Caching audio")):
+            try:
+                # Save audio and keep only metadata + path
+                audio_path = os.path.join("cache_original", f"orig_{i}_{entry.get('id', 'sample')}.wav")
+                sf.write(audio_path, entry['audio']['array'], entry['audio']['sampling_rate'])
+                
+                # Keep only what we need
+                new_entry = {
+                    'id': entry.get('id', f'sample_{i}'),
+                    'category': entry.get('category', 'overall'),
+                    'audio': {'path': audio_path, 'sampling_rate': entry['audio']['sampling_rate']}
+                }
+                original_entries.append(new_entry)
+            except Exception as e:
+                print(f"Error caching sample {i}: {e}")
+        
+        del all_entries
+        gc.collect()
+        print(f"Loaded {len(original_entries)} samples from {len(c.keys())} splits (cached on disk)")
     
     # Warn about memory usage for large datasets
     if len(original_entries) > 5000:
@@ -274,9 +295,9 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                     import copy
                     entry_copy = copy.deepcopy(entry)
                     
-                    # Synthesize audio using the codec
+                    # Synthesize audio using the codec (local_save=True means it saves to disk)
                     # The codec will automatically handle resampling to its native SR and back
-                    synthesized = codec_instance.synth(entry_copy, local_save=False)
+                    synthesized = codec_instance.synth(entry_copy, local_save=True)
                     model_entries.append(synthesized)
                 except Exception as e:
                     print(f"Error synthesizing sample: {e}")
