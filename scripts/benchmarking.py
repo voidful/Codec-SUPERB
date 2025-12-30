@@ -150,7 +150,8 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         all_entries = []
         for split_name in c.keys():
             split_data = c[split_name]
-            split_data = split_data.cast_column("audio", datasets.Audio(decode=False))
+            # For direct evaluation, we need decoded audio for codec.synth()
+            split_data = split_data.cast_column("audio", datasets.Audio(decode=True))
             split_list = list(split_data)
             # Add category field if not present
             for entry in split_list:
