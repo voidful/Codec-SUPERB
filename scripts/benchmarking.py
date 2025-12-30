@@ -155,15 +155,31 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         # Combine all splits into one dataset
         all_entries = []
         for split_name in c.keys():
-            split_data = c[split_name]
-            # For direct evaluation, we need decoded audio for codec.synth()
-            split_data = split_data.cast_column("audio", datasets.Audio(decode=True))
-            split_list = list(split_data)
-            # Add category field if not present
-            for entry in split_list:
-                if 'category' not in entry:
-                    entry['category'] = split_name
-            all_entries.extend(split_list)
+            try:
+                split_data = c[split_name]
+                # For direct evaluation, we need decoded audio for codec.synth()
+                # Use decode=True but with error handling for LLVM issues
+                split_data = split_data.cast_column("audio", datasets.Audio(decode=True))
+                split_list = list(split_data)
+                # Add category field if not present
+                for entry in split_list:
+                    if 'category' not in entry:
+                        entry['category'] = split_name
+                all_entries.extend(split_list)
+            except Exception as e:
+                error_msg = str(e)
+                if 'LLVM' in error_msg or 'svml' in error_msg.lower():
+                    print(f"\n{'='*80}")
+                    print("LLVM/MKL Error Detected!")
+                    print(f"{'='*80}")
+                    print("\nThis is a library compatibility issue. Try these solutions:")
+                    print("\n1. Use pre-synthesized dataset instead:")
+                    print("   python3 scripts/dataset_creator.py --dataset voidful/codec-superb-tiny --specific_codecs auv llmcodec bigcodec_1k")
+                    print("   python3 scripts/benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth --models auv llmcodec bigcodec_1k")
+                    print("\n2. Or reinstall PyTorch with different BLAS:")
+                    print("   pip install torch --index-url https://download.pytorch.org/whl/cpu")
+                    print(f"\n{'='*80}\n")
+                raise
         
         if limit is not None:
             all_entries = all_entries[:limit]
