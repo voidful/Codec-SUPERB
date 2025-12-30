@@ -192,14 +192,27 @@ class BaseCodec(ABC):
 
     def synth(self, data, local_save=True):
         """Synthesize audio from data for a single sample with automatic resampling."""
-        # Get original sampling rate
-        orig_sr = data.get('audio', {}).get('sampling_rate')
+        # Get original sampling rate and audio array
+        audio_info = data.get('audio', {})
+        orig_sr = None
+        orig_audio = None
+
+        if isinstance(audio_info, str):
+            # It's a path
+            import soundfile as sf
+            orig_audio, orig_sr = sf.read(audio_info)
+        elif isinstance(audio_info, dict):
+            orig_sr = audio_info.get('sampling_rate')
+            orig_audio = audio_info.get('array')
+            if orig_audio is None and 'path' in audio_info:
+                import soundfile as sf
+                orig_audio, orig_sr = sf.read(audio_info['path'])
+        
         codec_sr = self.sampling_rate
         
         # Prepare data for codec processing
         if orig_sr and codec_sr and orig_sr != codec_sr:
             # Need to resample to codec's native sampling rate
-            orig_audio = data['audio']['array']
             if isinstance(orig_audio, torch.Tensor):
                 orig_audio = orig_audio.cpu().numpy()
             
@@ -217,10 +230,17 @@ class BaseCodec(ABC):
                 'sampling_rate': codec_sr
             }
         else:
-            temp_data = data
+            temp_data = data.copy()
             if not orig_sr:
                 # If no original SR, assume codec SR
                 orig_sr = codec_sr
+            
+            # Ensure we have an array in temp_data for extraction
+            if isinstance(temp_data['audio'], str) or (isinstance(temp_data['audio'], dict) and temp_data['audio'].get('array') is None):
+                temp_data['audio'] = {
+                    'array': orig_audio,
+                    'sampling_rate': orig_sr
+                }
         
         # Extract unit and decode at codec's native SR
         extracted_unit = self.extract_unit(temp_data)
@@ -254,9 +274,12 @@ class BaseCodec(ABC):
         # Save or return
         if local_save:
             audio_id = data.get('id', str(uuid.uuid4()))
-            audio_path = f"dummy_{self.setting}/{audio_id}.wav"
+            # Create directory if it doesn't exist
+            save_dir = f"reconstructed_{self.setting}"
+            os.makedirs(save_dir, exist_ok=True)
+            audio_path = os.path.join(save_dir, f"{audio_id}.wav")
             save_audio(audio_values, audio_path, orig_sr)  # Save at original SR
-            data['audio'] = audio_path
+            data['audio'] = {'path': audio_path, 'sampling_rate': orig_sr}
         else:
             data['audio'] = {
                 'array': audio_values,
