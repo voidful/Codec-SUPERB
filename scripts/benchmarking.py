@@ -288,7 +288,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                 metrics_results.append(result)
         else:
             # Use multiprocessing
-            metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize)
+            metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize, desc=f"Calculating metrics for {model}")
         metrics_results = [metrics for metrics in metrics_results if metrics is not None]
         # Process Dataset END
 
