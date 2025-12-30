@@ -214,11 +214,27 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             model_entries = []
             for entry in tqdm(original_entries, desc=f"Synthesizing with {model}"):
                 try:
+                    # Get original sampling rate before synthesis
+                    original_sr = None
+                    if 'audio' in entry:
+                        if isinstance(entry['audio'], dict):
+                            original_sr = entry['audio'].get('sampling_rate')
+                        
                     # Synthesize audio using the codec
                     synthesized = codec_instance.synth(entry, local_save=False)
+                    
+                    # Ensure sampling_rate is preserved in synthesized output
+                    if 'audio' in synthesized:
+                        if not isinstance(synthesized['audio'], dict):
+                            synthesized['audio'] = {'array': synthesized['audio'], 'sampling_rate': original_sr}
+                        elif synthesized['audio'].get('sampling_rate') is None and original_sr is not None:
+                            synthesized['audio']['sampling_rate'] = original_sr
+                    
                     model_entries.append(synthesized)
                 except Exception as e:
                     print(f"Error synthesizing sample: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # Add empty entry to maintain alignment
                     model_entries.append({'audio': {'array': None, 'sampling_rate': None}})
             
