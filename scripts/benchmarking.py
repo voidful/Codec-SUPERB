@@ -324,4 +324,9 @@ if __name__ == "__main__":
                         help='Disable saving original and reconstructed audio samples (saves by default)')
 
     args = parser.parse_args()
+    
+    # Handle comma-separated models (e.g., --models auv,llmcodec,bigcodec_1k)
+    if args.models and len(args.models) == 1 and ',' in args.models[0]:
+        args.models = [m.strip() for m in args.models[0].split(',')]
+    
     evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio)
