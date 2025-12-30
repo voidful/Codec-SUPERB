@@ -46,19 +46,15 @@ def resample_audio(audio_array, orig_sr, target_sr):
         # librosa.resample expects (n_samples,) or (n_channels, n_samples)
         # Handle both shapes
         if audio_array.ndim == 1:
+            # Simple 1D: (samples,)
             resampled = librosa.resample(audio_array, orig_sr=orig_sr, target_sr=target_sr)
         elif audio_array.ndim == 2:
-            # If shape is (samples, channels), transpose to (channels, samples)
-            if audio_array.shape[1] < audio_array.shape[0]:
-                audio_array = audio_array.T
-            # Resample each channel
+            # 2D: resample each row/channel independently
+            # Assume shape is (batch/channels, samples)
             resampled = np.array([
-                librosa.resample(channel, orig_sr=orig_sr, target_sr=target_sr)
-                for channel in audio_array
+                librosa.resample(row, orig_sr=orig_sr, target_sr=target_sr)
+                for row in audio_array
             ])
-            # Transpose back if needed
-            if audio_array.shape[1] < audio_array.shape[0]:
-                resampled = resampled.T
         else:
             raise ValueError(f"Unexpected audio array shape: {audio_array.shape}")
         
