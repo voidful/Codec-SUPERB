@@ -157,7 +157,7 @@ PYTHONPATH=. python3 scripts/check_all_codecs.py
 ## 📝 Citation
 
 If you use Codec-SUPERB in your research, please cite:
-
+ACL:  
 ```bibtex
 @inproceedings{wu-etal-2024-codec,
     title = "Codec-{SUPERB}: An In-Depth Analysis of Sound Codec Models",
@@ -170,6 +170,25 @@ If you use Codec-SUPERB in your research, please cite:
 }
 ```
 
+SLT:  
+```bibtex
+@article{wu2024codec,
+  title={Codec-superb: An in-depth analysis of sound codec models},
+  author={Wu, Haibin and Chung, Ho-Lam and Lin, Yi-Cheng and Wu, Yuan-Kuei and Chen, Xuanjun and Pai, Yu-Chi and Wang, Hsiu-Hsuan and Chang, Kai-Wei and Liu, Alexander H and Lee, Hung-yi},
+  journal={arXiv preprint arXiv:2402.13071},
+  year={2024}
+}
+```
+
+Arxiv:  
+```bibtex
+@article{wu2024towards,
+  title={Towards audio language modeling-an overview},
+  author={Wu, Haibin and Chen, Xuanjun and Lin, Yi-Cheng and Chang, Kai-wei and Chung, Ho-Lam and Liu, Alexander H and Lee, Hung-yi},
+  journal={arXiv preprint arXiv:2402.13236},
+  year={2024}
+}
+```
 ---
 
 ## 🤝 Contribution & License
