@@ -365,12 +365,11 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                 # Handle both formats: plain metrics dict or dict with 'metrics' key
                 if save_audio and 'metrics' in result:
                     metrics = result['metrics']
-                    # Store audio sample with metadata (limit to first 100 to save memory)
-                    if len(audio_samples) < 100:
-                        audio_samples.append({
-                            'id': entry_meta['id'],
-                            'category': category,
-                            'original_audio': result['original_audio'],
+                    # Store audio sample with metadata (paths are lightweight, so we can save all)
+                    audio_samples.append({
+                        'id': entry_meta['id'],
+                        'category': category,
+                        'original_audio': result['original_audio'],
                             'reconstructed_audio': result['reconstructed_audio'],
                             'sampling_rate': result['sampling_rate']
                         })
