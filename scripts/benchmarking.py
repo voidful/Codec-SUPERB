@@ -72,6 +72,11 @@ def compute_metrics(original, model, max_duration):
     
     if orig_array is None or model_array is None:
         return None 
+    
+    # Check sampling rate mismatch
+    if orig_sr != model_sr:
+        print(f"Warning: Sampling rate mismatch - original: {orig_sr}Hz, model: {model_sr}Hz")
+        return None
 
     original_arrays, resynth_array = pad_arrays_to_match(orig_array, model_array)
     sampling_rate = orig_sr
@@ -117,6 +122,10 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     if limit is not None:
         original_entries = original_entries[:limit]
     print(f"Cached {len(original_entries)} original entries")
+    
+    # Warn about memory usage for large datasets
+    if len(original_entries) > 5000:
+        print(f"Warning: Large dataset ({len(original_entries)} samples) - high memory usage expected")
 
     result_data = {}
     for model in models:
@@ -168,6 +177,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
 
         # Aggregate the metrics
         aggregated_metrics = defaultdict(lambda: defaultdict(list))
+        failed_count = 0
         
         for metrics, entry in zip(metrics_results, original_entries):
             if metrics:
@@ -175,6 +185,8 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                 for k, v in metrics.items():
                     aggregated_metrics[category][k].append(v)
                     aggregated_metrics['overall'][k].append(v)
+            else:
+                failed_count += 1
 
         # Calculate average metrics per category
         model_result = {}
@@ -182,6 +194,11 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             model_result[category] = {k: np.nanmean(v) if v else np.nan for k, v in metrics_dict.items()}
         
         result_data[model] = model_result
+        
+        # Report statistics
+        total_samples = len(metrics_results)
+        success_count = total_samples - failed_count
+        print(f\"Processed: {success_count}/{total_samples} samples successfully ({failed_count} failed)\")
         gc.collect()
         print(f"RAM used after processing {model}: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
         print(f"Time taken for {model}: {time.time() - model_start_time:.2f} seconds")
@@ -192,7 +209,9 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     print(f"Final RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
 
     # Save results with timestamp if file already exists
-    base_filename = f"{dataset_name.replace('/', '_')}_evaluation_results"
+    # Sanitize dataset name for filename (remove invalid characters)
+    safe_dataset_name = dataset_name.replace('/', '_').replace(':', '_').replace('?', '_').replace('*', '_')
+    base_filename = f"{safe_dataset_name}_evaluation_results"
     timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
     output_file_name = f"{base_filename}{timestamp}.json"
 
