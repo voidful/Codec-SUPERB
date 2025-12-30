@@ -289,6 +289,14 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             args_list = [(original_iter, model_iter, max_duration, save_audio) for original_iter, model_iter in
                          zip(original_entries, model_entries)]
             
+            # Extract only metadata we need for aggregation (to save memory)
+            entries_metadata = [{'id': e.get('id', f'sample_{i}'), 'category': e.get('category', 'overall')} 
+                               for i, e in enumerate(original_entries)]
+            
+            # Clean up large data structures to free memory before metrics calculation
+            del model_entries
+            del original_entries
+            
             # Clean up codec instance
             del codec_instance
             gc.collect()
@@ -312,29 +320,37 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         failed_count = 0
         
         print(f"\nAggregating metrics for {model}...")
-        for idx, (result, entry) in enumerate(tqdm(zip(metrics_results, original_entries), total=len(metrics_results), desc="Aggregating metrics")):
+        for idx, (result, entry_meta) in enumerate(tqdm(zip(metrics_results, entries_metadata), total=len(metrics_results), desc="Aggregating metrics")):
             if result:
-                category = entry.get('category', 'overall')
+                category = entry_meta['category']
                 
                 # Handle both formats: plain metrics dict or dict with 'metrics' key
                 if save_audio and 'metrics' in result:
                     metrics = result['metrics']
-                    # Store audio sample with metadata
-                    audio_samples.append({
-                        'id': entry.get('id', f'sample_{idx}'),
-                        'category': category,
-                        'original_audio': result['original_audio'],
-                        'reconstructed_audio': result['reconstructed_audio'],
-                        'sampling_rate': result['sampling_rate']
-                    })
+                    # Store audio sample with metadata (limit to first 100 to save memory)
+                    if len(audio_samples) < 100:
+                        audio_samples.append({
+                            'id': entry_meta['id'],
+                            'category': category,
+                            'original_audio': result['original_audio'],
+                            'reconstructed_audio': result['reconstructed_audio'],
+                            'sampling_rate': result['sampling_rate']
+                        })
                 else:
                     metrics = result
                 
                 for k, v in metrics.items():
                     aggregated_metrics[category][k].append(v)
                     aggregated_metrics['overall'][k].append(v)
+                
+                # Clear the result to free memory immediately
+                metrics_results[idx] = None
             else:
                 failed_count += 1
+        
+        # Clear metrics_results completely
+        del metrics_results
+        gc.collect()
 
         # Calculate average metrics per category
         model_result = {}
