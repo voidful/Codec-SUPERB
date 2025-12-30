@@ -260,9 +260,14 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             model_entries = []
             for entry in tqdm(original_entries, desc=f"Synthesizing with {model}"):
                 try:
+                    # CRITICAL: Create a deep copy to avoid modifying the original entry
+                    # synth() modifies data['audio'] in place, which would corrupt original_entries
+                    import copy
+                    entry_copy = copy.deepcopy(entry)
+                    
                     # Synthesize audio using the codec
                     # The codec will automatically handle resampling to its native SR and back
-                    synthesized = codec_instance.synth(entry, local_save=False)
+                    synthesized = codec_instance.synth(entry_copy, local_save=False)
                     model_entries.append(synthesized)
                 except Exception as e:
                     print(f"Error synthesizing sample: {e}")
