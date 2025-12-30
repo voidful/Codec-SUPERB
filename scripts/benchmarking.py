@@ -258,47 +258,14 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             # Create model entries by encoding and decoding original audio
             print(f"Encoding and decoding {len(original_entries)} samples with {model}...")
             model_entries = []
-            sr_debug_count = 0
-            for idx, entry in enumerate(tqdm(original_entries, desc=f"Synthesizing with {model}")):
+            for entry in tqdm(original_entries, desc=f"Synthesizing with {model}"):
                 try:
-                    # Get original sampling rate before synthesis
-                    original_sr = None
-                    if 'audio' in entry:
-                        if isinstance(entry['audio'], dict):
-                            original_sr = entry['audio'].get('sampling_rate')
-                        
                     # Synthesize audio using the codec
+                    # The codec will automatically handle resampling to its native SR and back
                     synthesized = codec_instance.synth(entry, local_save=False)
-                    
-                    # Debug: check first few samples
-                    if sr_debug_count < 3:
-                        print(f"\nDebug sample {idx}:")
-                        print(f"  Original SR: {original_sr}")
-                        print(f"  Synthesized keys: {synthesized.keys() if isinstance(synthesized, dict) else 'not a dict'}")
-                        if 'audio' in synthesized:
-                            print(f"  Synthesized audio type: {type(synthesized['audio'])}")
-                            if isinstance(synthesized['audio'], dict):
-                                print(f"  Synthesized audio keys: {synthesized['audio'].keys()}")
-                                print(f"  Synthesized SR: {synthesized['audio'].get('sampling_rate')}")
-                        sr_debug_count += 1
-                    
-                    # Ensure sampling_rate is preserved in synthesized output
-                    if 'audio' in synthesized:
-                        if not isinstance(synthesized['audio'], dict):
-                            # If audio is just an array, wrap it in a dict
-                            synthesized['audio'] = {'array': synthesized['audio'], 'sampling_rate': original_sr}
-                        elif synthesized['audio'].get('sampling_rate') is None:
-                            # If sampling_rate is None, set it from original
-                            if original_sr is not None:
-                                synthesized['audio']['sampling_rate'] = original_sr
-                            else:
-                                # Last resort: use a default based on common rates
-                                print(f"Warning: No sampling rate available for sample {idx}, using default 16000Hz")
-                                synthesized['audio']['sampling_rate'] = 16000
-                    
                     model_entries.append(synthesized)
                 except Exception as e:
-                    print(f"Error synthesizing sample {idx}: {e}")
+                    print(f"Error synthesizing sample: {e}")
                     import traceback
                     traceback.print_exc()
                     # Add empty entry to maintain alignment
