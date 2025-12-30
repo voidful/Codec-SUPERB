@@ -23,15 +23,15 @@ def pad_arrays_to_match(array1, array2):
 
 def resample_audio(audio_array, orig_sr, target_sr):
     """
-    Resample audio from orig_sr to target_sr.
+    Resample 1D audio from orig_sr to target_sr.
     
     Args:
-        audio_array: numpy array or torch tensor of shape (samples,) or (samples, channels)
+        audio_array: 1D numpy array of shape (samples,)
         orig_sr: original sampling rate (int)
         target_sr: target sampling rate (int)
     
     Returns:
-        resampled audio as numpy array
+        resampled audio as 1D numpy array
     """
     if orig_sr == target_sr:
         return audio_array
@@ -40,25 +40,14 @@ def resample_audio(audio_array, orig_sr, target_sr):
     if isinstance(audio_array, torch.Tensor):
         audio_array = audio_array.cpu().numpy()
     
+    # Ensure 1D
+    if audio_array.ndim != 1:
+        raise ValueError(f"resample_audio expects 1D input, got shape {audio_array.shape}")
+    
     # Use librosa for resampling
     try:
         import librosa
-        # librosa.resample expects (n_samples,) or (n_channels, n_samples)
-        # Handle both shapes
-        if audio_array.ndim == 1:
-            # Simple 1D: (samples,)
-            resampled = librosa.resample(audio_array, orig_sr=orig_sr, target_sr=target_sr)
-        elif audio_array.ndim == 2:
-            # 2D: resample each row/channel independently
-            # Assume shape is (batch/channels, samples)
-            resampled = np.array([
-                librosa.resample(row, orig_sr=orig_sr, target_sr=target_sr)
-                for row in audio_array
-            ])
-        else:
-            raise ValueError(f"Unexpected audio array shape: {audio_array.shape}")
-        
-        return resampled
+        return librosa.resample(audio_array, orig_sr=orig_sr, target_sr=target_sr)
     except ImportError:
         raise ImportError("librosa is required for resampling. Install with: pip install librosa")
 
@@ -214,7 +203,11 @@ class BaseCodec(ABC):
             if isinstance(orig_audio, torch.Tensor):
                 orig_audio = orig_audio.cpu().numpy()
             
-            # Resample to codec SR
+            # Ensure 1D for resampling (squeeze out any extra dimensions)
+            if orig_audio.ndim > 1:
+                orig_audio = orig_audio.squeeze()
+            
+            # Resample to codec SR (only works with 1D)
             resampled_audio = resample_audio(orig_audio, orig_sr, codec_sr)
             
             # Create temporary data with resampled audio
@@ -249,6 +242,10 @@ class BaseCodec(ABC):
         # Convert to numpy if needed
         if isinstance(audio_values, torch.Tensor):
             audio_values = audio_values.cpu().numpy()
+        
+        # Ensure 1D for resampling
+        if audio_values.ndim > 1:
+            audio_values = audio_values.squeeze()
         
         # Resample back to original SR if needed
         if orig_sr != codec_sr:
