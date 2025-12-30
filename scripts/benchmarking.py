@@ -111,7 +111,7 @@ def process_entry(args):
         return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=False):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True):
     start_time = time.time()
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
 
@@ -262,8 +262,8 @@ if __name__ == "__main__":
     parser.add_argument('--max_workers', type=int, default=4, help='Number of workers for multi-processing')
     parser.add_argument('--chunksize', type=int, default=10, help='Chunk size for multi-processing')
     parser.add_argument('--limit', type=int, default=None, help='Limit the number of samples to evaluate')
-    parser.add_argument('--save_audio', action='store_true', 
-                        help='Save original and reconstructed audio samples in the results')
+    parser.add_argument('--no_save_audio', action='store_false', dest='save_audio',
+                        help='Disable saving original and reconstructed audio samples (saves by default)')
 
     args = parser.parse_args()
     evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio)
