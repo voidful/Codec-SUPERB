@@ -156,9 +156,6 @@ def compute_metrics(original, model, max_duration, save_audio=False):
 def process_entry(args):
     original_iter, model_iter, max_duration, save_audio = args
     try:
-def process_entry(args):
-    original_iter, model_iter, max_duration, save_audio = args
-    try:
         # save_audio is True, so compute_metrics will try to return paths if available
         result = compute_metrics(original_iter, model_iter, max_duration, save_audio)
         if result is not None:
