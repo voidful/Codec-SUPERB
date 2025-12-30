@@ -66,7 +66,7 @@ def safe_load_audio(audio_entry):
         return None, None
 
 
-def compute_metrics(original, model, max_duration):
+def compute_metrics(original, model, max_duration, save_audio=False):
     orig_array, orig_sr = safe_load_audio(original['audio'])
     model_array, model_sr = safe_load_audio(model['audio'])
     
@@ -85,15 +85,25 @@ def compute_metrics(original, model, max_duration):
         return None
     model_signal = AudioSignal(resynth_array, sampling_rate)
     metrics = get_metrics(original_signal, model_signal)
+    
+    # Optionally include audio data
+    if save_audio:
+        return {
+            'metrics': metrics,
+            'original_audio': original_arrays.tolist() if isinstance(original_arrays, np.ndarray) else original_arrays,
+            'reconstructed_audio': resynth_array.tolist() if isinstance(resynth_array, np.ndarray) else resynth_array,
+            'sampling_rate': sampling_rate
+        }
+    
     return metrics
 
 
 def process_entry(args):
-    original_iter, model_iter, max_duration = args
+    original_iter, model_iter, max_duration, save_audio = args
     try:
-        metrics = compute_metrics(original_iter, model_iter, max_duration)
-        if metrics is not None:
-            return metrics
+        result = compute_metrics(original_iter, model_iter, max_duration, save_audio)
+        if result is not None:
+            return result
         else:
             return {}
     except Exception as e:
@@ -101,7 +111,7 @@ def process_entry(args):
         return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=False):
     start_time = time.time()
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
 
@@ -159,7 +169,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             model_entries = model_entries[:limit]
 
         # Process Dataset with Multi-Processing
-        args_list = [(original_iter, model_iter, max_duration) for original_iter, model_iter in
+        args_list = [(original_iter, model_iter, max_duration, save_audio) for original_iter, model_iter in
                      zip(original_entries, model_entries)]
 
         # Use sequential processing if multiprocessing is disabled or if max_workers is 1
@@ -177,11 +187,27 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
 
         # Aggregate the metrics
         aggregated_metrics = defaultdict(lambda: defaultdict(list))
+        audio_samples = [] if save_audio else None
         failed_count = 0
         
-        for metrics, entry in zip(metrics_results, original_entries):
-            if metrics:
+        for idx, (result, entry) in enumerate(zip(metrics_results, original_entries)):
+            if result:
                 category = entry.get('category', 'overall')
+                
+                # Handle both formats: plain metrics dict or dict with 'metrics' key
+                if save_audio and 'metrics' in result:
+                    metrics = result['metrics']
+                    # Store audio sample with metadata
+                    audio_samples.append({
+                        'id': entry.get('id', f'sample_{idx}'),
+                        'category': category,
+                        'original_audio': result['original_audio'],
+                        'reconstructed_audio': result['reconstructed_audio'],
+                        'sampling_rate': result['sampling_rate']
+                    })
+                else:
+                    metrics = result
+                
                 for k, v in metrics.items():
                     aggregated_metrics[category][k].append(v)
                     aggregated_metrics['overall'][k].append(v)
@@ -192,6 +218,10 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         model_result = {}
         for category, metrics_dict in aggregated_metrics.items():
             model_result[category] = {k: np.nanmean(v) if v else np.nan for k, v in metrics_dict.items()}
+        
+        # Add audio samples if save_audio is enabled
+        if save_audio and audio_samples:
+            model_result['audio_samples'] = audio_samples
         
         result_data[model] = model_result
         
@@ -232,6 +262,8 @@ if __name__ == "__main__":
     parser.add_argument('--max_workers', type=int, default=4, help='Number of workers for multi-processing')
     parser.add_argument('--chunksize', type=int, default=10, help='Chunk size for multi-processing')
     parser.add_argument('--limit', type=int, default=None, help='Limit the number of samples to evaluate')
+    parser.add_argument('--save_audio', action='store_true', 
+                        help='Save original and reconstructed audio samples in the results')
 
     args = parser.parse_args()
-    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit)
+    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio)
