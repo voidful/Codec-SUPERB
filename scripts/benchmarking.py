@@ -3,6 +3,15 @@ import os
 os.environ['MKL_THREADING_LAYER'] = 'GNU'
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+# Suppress TensorFlow warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+# Suppress Python warnings
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='torchmetrics')
+warnings.filterwarnings('ignore', category=UserWarning, module='audiotools')
+warnings.filterwarnings('ignore', message='pkg_resources is deprecated')
 
 import argparse
 import json
