@@ -1,6 +1,6 @@
-transformers==4.31.0
-speechtokenizer==0.1.2
-tokenizers==0.13.3
+transformers
+speechtokenizer
+tokenizers
 datasets==2.14.6
 nlp2==1.8.52
 soundfile==0.12.1
