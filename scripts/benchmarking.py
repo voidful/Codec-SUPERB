@@ -251,7 +251,9 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             if limit is not None:
                 original_entries = original_entries[:limit]
             print(f"Cached {len(original_entries)} original entries")
-    else:
+    
+    # Handle direct evaluation mode (either originally or after fallback)
+    if not is_presynthesized:
         # New mode: apply codecs on-the-fly to original dataset
         print("Using direct codec evaluation mode")
         if specific_models is None or len(specific_models) == 0:
