@@ -83,7 +83,10 @@ class UnicodecBaseCodec(BaseCodec):
             import traceback
             tb = traceback.format_exc()
             raise Exception(
-                f"Please install unicodec first. pip install git+https://github.com/mesolitica/UniCodec-fix. Error: {e}\nTraceback:\n{tb}"
+                f"Please install unicodec and vocos first:\n"
+                f"  pip install vocos\n"
+                f"  pip install git+https://github.com/mesolitica/UniCodec-fix\n"
+                f"Error: {e}\nTraceback:\n{tb}"
             )
 
         self._download_resources()
