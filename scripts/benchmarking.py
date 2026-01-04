@@ -204,9 +204,12 @@ def process_entry(args):
         return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True):
     start_time = time.time()
-    print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB\n")
+    print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
+    if not disk_cache:
+        print("Disk caching disabled - keeping audio in memory for faster processing")
+    print()
 
     if os.path.exists(dataset_name):
         c = load_from_disk(dataset_name)
@@ -293,29 +296,43 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         if limit is not None:
             all_entries = all_entries[:limit]
         
-        # Save original entries to disk to save RAM
-        print(f"Caching {len(all_entries)} original audio samples to disk...")
-        os.makedirs("cache_original", exist_ok=True)
-        original_entries = []
-        for i, entry in enumerate(tqdm(all_entries, desc="Caching audio")):
-            try:
-                # Save audio and keep only metadata + path
-                audio_path = os.path.join("cache_original", f"orig_{i}_{entry.get('id', 'sample')}.wav")
-                sf.write(audio_path, entry['audio']['array'], entry['audio']['sampling_rate'])
-                
-                # Keep only what we need
+        # Save original entries to disk to save RAM (if disk_cache enabled)
+        if disk_cache:
+            print(f"Caching {len(all_entries)} original audio samples to disk...")
+            os.makedirs("cache_original", exist_ok=True)
+            original_entries = []
+            for i, entry in enumerate(tqdm(all_entries, desc="Caching audio")):
+                try:
+                    # Save audio and keep only metadata + path
+                    audio_path = os.path.join("cache_original", f"orig_{i}_{entry.get('id', 'sample')}.wav")
+                    sf.write(audio_path, entry['audio']['array'], entry['audio']['sampling_rate'])
+                    
+                    # Keep only what we need
+                    new_entry = {
+                        'id': entry.get('id', f'sample_{i}'),
+                        'category': entry.get('category', 'overall'),
+                        'audio': {'path': audio_path, 'sampling_rate': entry['audio']['sampling_rate']}
+                    }
+                    original_entries.append(new_entry)
+                except Exception as e:
+                    print(f"Error caching sample {i}: {e}")
+            
+            del all_entries
+            gc.collect()
+            print(f"Loaded {len(original_entries)} samples from {len(c.keys())} splits (cached on disk)")
+        else:
+            # Keep in memory for faster processing
+            original_entries = []
+            for i, entry in enumerate(all_entries):
                 new_entry = {
                     'id': entry.get('id', f'sample_{i}'),
                     'category': entry.get('category', 'overall'),
-                    'audio': {'path': audio_path, 'sampling_rate': entry['audio']['sampling_rate']}
+                    'audio': {'array': entry['audio']['array'], 'sampling_rate': entry['audio']['sampling_rate']}
                 }
                 original_entries.append(new_entry)
-            except Exception as e:
-                print(f"Error caching sample {i}: {e}")
-        
-        del all_entries
-        gc.collect()
-        print(f"Loaded {len(original_entries)} samples from {len(c.keys())} splits (cached on disk)")
+            del all_entries
+            gc.collect()
+            print(f"Loaded {len(original_entries)} samples from {len(c.keys())} splits (in memory)")
     
     # Warn about memory usage for large datasets
     if len(original_entries) > 5000:
@@ -372,9 +389,10 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                     import copy
                     entry_copy = copy.deepcopy(entry)
                     
-                    # Synthesize audio using the codec (local_save=True means it saves to disk)
+                    # Synthesize audio using the codec
+                    # local_save=disk_cache means it saves to disk only when caching is enabled
                     # The codec will automatically handle resampling to its native SR and back
-                    synthesized = codec_instance.synth(entry_copy, local_save=True)
+                    synthesized = codec_instance.synth(entry_copy, local_save=disk_cache)
                     model_entries.append(synthesized)
                 except Exception as e:
                     print(f"Error synthesizing sample: {e}")
@@ -523,6 +541,8 @@ if __name__ == "__main__":
     parser.add_argument('--limit', type=int, default=None, help='Limit the number of samples to evaluate')
     parser.add_argument('--no_save_audio', action='store_false', dest='save_audio',
                         help='Disable saving original and reconstructed audio samples (saves by default)')
+    parser.add_argument('--no-disk-cache', action='store_true', dest='no_disk_cache',
+                        help='Keep audio in memory instead of caching to disk (faster but uses more RAM)')
 
     args = parser.parse_args()
     
@@ -530,4 +550,4 @@ if __name__ == "__main__":
     if args.models and len(args.models) == 1 and ',' in args.models[0]:
         args.models = [m.strip() for m in args.models[0].split(',')]
     
-    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio)
+    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio, not args.no_disk_cache)
