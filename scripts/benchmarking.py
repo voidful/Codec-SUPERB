@@ -223,14 +223,34 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         for split in c.keys():
             c[split] = c[split].cast_column("audio", datasets.Audio(decode=False))
         
-        models = [key for key in c.keys() if key != "original"]
+        available_models = [key for key in c.keys() if key != "original"]
         
-        # Cache original entries
-        print("Caching original dataset entries...")
-        original_entries = list(c['original'])
-        if limit is not None:
-            original_entries = original_entries[:limit]
-        print(f"Cached {len(original_entries)} original entries")
+        # Check if user-specified models exist in the dataset
+        if specific_models is not None:
+            missing_models = [m for m in specific_models if m not in available_models]
+            if missing_models:
+                print(f"\nWarning: The following models are not in the pre-synthesized dataset: {missing_models}")
+                print(f"Available models in dataset: {available_models}")
+                print(f"\nTo evaluate these models, use direct evaluation mode instead:")
+                print(f"  python scripts/benchmarking.py --dataset voidful/codec-superb-tiny --models {' '.join(missing_models)}")
+                print()
+            # Filter to only models that exist in dataset
+            models = [m for m in specific_models if m in available_models]
+            if not models:
+                print("Error: None of the specified models exist in the pre-synthesized dataset.")
+                print("Switching to direct evaluation mode...")
+                is_presynthesized = False
+                models = specific_models
+        else:
+            models = available_models
+        
+        # Cache original entries (only if still in presynthesized mode)
+        if is_presynthesized:
+            print("Caching original dataset entries...")
+            original_entries = list(c['original'])
+            if limit is not None:
+                original_entries = original_entries[:limit]
+            print(f"Cached {len(original_entries)} original entries")
     else:
         # New mode: apply codecs on-the-fly to original dataset
         print("Using direct codec evaluation mode")
