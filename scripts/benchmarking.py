@@ -73,15 +73,52 @@ def safe_load_audio(audio_entry):
     Returns: (array [T, C], sampling_rate) or (None, None) if failed.
     """
     try:
+        # Handle datasets 4.0+ AudioDecoder from torchcodec
+        if hasattr(audio_entry, '__class__') and 'AudioDecoder' in audio_entry.__class__.__name__:
+            # AudioDecoder is callable and returns (samples, sample_rate)
+            try:
+                # Try calling the decoder directly
+                decoded = audio_entry()
+                if isinstance(decoded, tuple) and len(decoded) == 2:
+                    samples, sr = decoded
+                    if hasattr(samples, 'numpy'):
+                        samples = samples.numpy()
+                    return samples, sr
+                elif hasattr(decoded, 'numpy'):
+                    # Some versions return just the tensor
+                    return decoded.numpy(), getattr(audio_entry, 'sample_rate', 16000)
+            except Exception as e:
+                # Fallback: try accessing attributes directly
+                if hasattr(audio_entry, 'samples') and hasattr(audio_entry, 'sample_rate'):
+                    samples = audio_entry.samples
+                    if hasattr(samples, 'numpy'):
+                        samples = samples.numpy()
+                    return samples, audio_entry.sample_rate
+                print(f"Warning: Could not decode AudioDecoder: {e}")
+                return None, None
+        
         # If it's already a dict with array (decoded)
         if isinstance(audio_entry, dict) and 'array' in audio_entry:
             array = audio_entry['array']
             sr = audio_entry['sampling_rate']
             
+            # Handle AudioDecoder nested in dict
+            if hasattr(array, '__class__') and 'AudioDecoder' in array.__class__.__name__:
+                try:
+                    decoded = array()
+                    if isinstance(decoded, tuple) and len(decoded) == 2:
+                        array, sr = decoded
+                    elif hasattr(decoded, 'numpy'):
+                        array = decoded
+                except:
+                    pass
+            
             # Critical: Ensure array is numpy on CPU for multiprocessing
             # CUDA tensors cannot be serialized across processes
             if hasattr(array, 'cpu'):
                 array = array.cpu().numpy()
+            elif hasattr(array, 'numpy'):
+                array = array.numpy()
             elif not isinstance(array, np.ndarray):
                 array = np.array(array)
             
