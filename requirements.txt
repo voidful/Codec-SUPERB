@@ -3,8 +3,8 @@ speechtokenizer
 tokenizers
 datasets
 nlp2==1.8.52
-soundfile==0.12.1
-librosa==0.10.1
+soundfile
+librosa
 pesq==0.0.4
 descript-audiotools
 sq_codec

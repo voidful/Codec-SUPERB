@@ -340,8 +340,6 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
 
     result_data = {}
     for model in models:
-        if specific_models is not None and model not in specific_models:
-            continue
         
         # Check if this is an encode-only codec by trying to load it
         try:
