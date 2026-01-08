@@ -260,9 +260,12 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         # New mode: apply codecs on-the-fly to original dataset
         print("Using direct codec evaluation mode")
         if specific_models is None or len(specific_models) == 0:
-            raise ValueError("Must specify --models when using direct evaluation mode")
-        
-        models = specific_models
+            # Get all available codecs
+            from SoundCodec.codec import list_codec
+            models = list_codec()
+            print(f"No models specified, evaluating all {len(models)} available codecs: {models}")
+        else:
+            models = specific_models
         
         # Combine all splits into one dataset
         all_entries = []
