@@ -18,5 +18,6 @@ test('renders the Codec-SUPERB paper page', () => {
   ).toBeInTheDocument();
   expect(screen.getByText(/Latest codec-superb-tiny results/i)).toBeInTheDocument();
   expect(screen.getByText(/BPS\/TPS Analysis/i)).toBeInTheDocument();
+  expect(screen.getByText(/LLMCodec Low-Bitrate Strengths/i)).toBeInTheDocument();
   expect(screen.getAllByText(/llmcodec/i).length).toBeGreaterThan(0);
 });

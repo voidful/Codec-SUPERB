@@ -39,6 +39,11 @@
   grid-column: 1 / -1;
 }
 
+.llm-spotlight {
+  border-color: #b8c8da;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
 .panel-heading {
   display: flex;
   align-items: baseline;
@@ -77,6 +82,36 @@
 .chart-tooltip strong {
   color: var(--accent-color);
   font-size: 0.82rem;
+}
+
+.spotlight-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.spotlight-summary div {
+  min-width: 0;
+}
+
+.spotlight-summary strong {
+  display: block;
+  color: var(--accent-color);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.spotlight-summary span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 650;
 }
 
 .summary-table-wrap {
@@ -121,8 +156,21 @@
   border-bottom: none;
 }
 
+.spotlight-table {
+  min-width: 680px;
+}
+
+.advantage-cell {
+  color: #047857;
+  font-weight: 760;
+}
+
 @media (max-width: 860px) {
   .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .spotlight-summary {
     grid-template-columns: 1fr;
   }
 

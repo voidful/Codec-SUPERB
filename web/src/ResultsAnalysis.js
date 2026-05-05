@@ -15,6 +15,12 @@ import './ResultsAnalysis.css';
 
 const colors = ['#0b5cad', '#2a9d8f', '#e76f51', '#7c3aed', '#64748b', '#c2410c'];
 const bpsGroupOrder = ['<1 kbps', '1-3 kbps', '3-8 kbps', '8-16 kbps', '16+ kbps'];
+const metricDefs = [
+  { key: 'overallMel', label: 'MEL', higherIsBetter: false },
+  { key: 'overallPesq', label: 'PESQ', higherIsBetter: true },
+  { key: 'overallStoi', label: 'STOI', higherIsBetter: true },
+  { key: 'overallF0Corr', label: 'F0Corr', higherIsBetter: true },
+];
 
 function formatNumber(value, digits = 3) {
   return Number.isFinite(value) ? value.toFixed(digits) : 'N/A';
@@ -105,6 +111,23 @@ function summarize(rows, groupKey, order) {
     .sort((a, b) => order(a.group) - order(b.group));
 }
 
+function rankRows(rows, metric) {
+  return [...rows]
+    .filter(row => Number.isFinite(row[metric.key]))
+    .sort((a, b) => (
+      metric.higherIsBetter
+        ? b[metric.key] - a[metric.key]
+        : a[metric.key] - b[metric.key]
+    ));
+}
+
+function isBetter(value, baseline, higherIsBetter) {
+  if (!Number.isFinite(value) || !Number.isFinite(baseline)) {
+    return false;
+  }
+  return higherIsBetter ? value > baseline : value < baseline;
+}
+
 function ScatterTooltip({ active, payload }) {
   if (!active || !payload?.length) {
     return null;
@@ -143,6 +166,45 @@ function GroupTooltip({ active, payload, label }) {
 
 const ResultsAnalysis = ({ results }) => {
   const rows = React.useMemo(() => prepareRows(results), [results]);
+  const llmCodec = React.useMemo(() => rows.find(row => row.model === 'llmcodec'), [rows]);
+  const lowBpsRows = React.useMemo(() => rows.filter(row => row.bps < 1), [rows]);
+  const sameRatePeers = React.useMemo(() => {
+    if (!llmCodec) {
+      return [];
+    }
+    return rows.filter(row => (
+      row.model !== llmCodec.model
+      && row.bps === llmCodec.bps
+      && row.tps === llmCodec.tps
+    ));
+  }, [llmCodec, rows]);
+  const llmHighlights = React.useMemo(() => {
+    if (!llmCodec) {
+      return [];
+    }
+
+    return metricDefs.map(metric => {
+      const ranked = rankRows(lowBpsRows, metric);
+      const rank = ranked.findIndex(row => row.model === llmCodec.model) + 1;
+      const peerAverage = average(sameRatePeers.map(row => row[metric.key]));
+      const betterThanPeerAverage = isBetter(
+        llmCodec[metric.key],
+        peerAverage,
+        metric.higherIsBetter
+      );
+
+      return {
+        ...metric,
+        value: llmCodec[metric.key],
+        rank,
+        total: ranked.length,
+        peerAverage,
+        betterThanPeerAverage,
+      };
+    });
+  }, [llmCodec, lowBpsRows, sameRatePeers]);
+  const topTwoCount = llmHighlights.filter(metric => metric.rank > 0 && metric.rank <= 2).length;
+  const peerWinCount = llmHighlights.filter(metric => metric.betterThanPeerAverage).length;
   const bpsSummary = React.useMemo(() => (
     summarize(rows, 'bpsGroup', group => bpsGroupOrder.indexOf(group))
   ), [rows]);
@@ -160,7 +222,7 @@ const ResultsAnalysis = ({ results }) => {
       .map((group, index) => ({
         group,
         color: colors[index % colors.length],
-        data: rows.filter(row => row.tpsGroup === group),
+        data: rows.filter(row => row.tpsGroup === group && row.model !== 'llmcodec'),
       }))
   ), [rows]);
 
@@ -176,10 +238,61 @@ const ResultsAnalysis = ({ results }) => {
       </div>
 
       <div className="analysis-grid">
+        {llmCodec && (
+          <article className="analysis-panel analysis-wide llm-spotlight">
+            <div className="panel-heading">
+              <h3>LLMCodec Low-Bitrate Strengths</h3>
+              <span>{formatNumber(llmCodec.bps, 2)} kbps / {formatNumber(llmCodec.tps, 0)} TPS</span>
+            </div>
+            <div className="spotlight-summary" aria-label="LLMCodec summary">
+              <div>
+                <strong>{topTwoCount}/{metricDefs.length}</strong>
+                <span>Top-2 metrics under 1 kbps</span>
+              </div>
+              <div>
+                <strong>{peerWinCount}/{metricDefs.length}</strong>
+                <span>Wins vs same-rate peer average</span>
+              </div>
+              <div>
+                <strong>{sameRatePeers.map(peer => peer.model).join(', ') || 'No peer'}</strong>
+                <span>Same BPS/TPS comparison set</span>
+              </div>
+            </div>
+            <div className="summary-table-wrap">
+              <table className="summary-table spotlight-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Direction</th>
+                    <th>LLMCodec</th>
+                    <th>Same-rate peer avg</th>
+                    <th>&lt;1 kbps rank</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {llmHighlights.map(metric => (
+                    <tr key={metric.key}>
+                      <td>{metric.label}</td>
+                      <td>{metric.higherIsBetter ? 'Higher is better' : 'Lower is better'}</td>
+                      <td className={metric.betterThanPeerAverage ? 'advantage-cell' : ''}>
+                        {formatNumber(metric.value)}
+                      </td>
+                      <td>{formatNumber(metric.peerAverage)}</td>
+                      <td className={metric.rank <= 2 ? 'advantage-cell' : ''}>
+                        #{metric.rank} / {metric.total}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
+        )}
+
         <article className="analysis-panel analysis-wide">
           <div className="panel-heading">
             <h3>Overall PESQ vs BPS</h3>
-            <span>Color grouped by TPS</span>
+            <span>LLMCodec highlighted separately</span>
           </div>
           <ResponsiveContainer width="100%" height={340}>
             <ScatterChart margin={{ top: 12, right: 24, bottom: 18, left: 0 }}>
@@ -209,6 +322,14 @@ const ResultsAnalysis = ({ results }) => {
                   fill={series.color}
                 />
               ))}
+              {llmCodec && (
+                <Scatter
+                  name="LLMCodec"
+                  data={[llmCodec]}
+                  fill="#111827"
+                  shape="diamond"
+                />
+              )}
             </ScatterChart>
           </ResponsiveContainer>
         </article>
