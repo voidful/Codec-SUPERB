@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CS">
+  <rect width="512" height="512" rx="96" fill="#0b5cad"/>
+  <rect x="42" y="42" width="428" height="428" rx="72" fill="#ffffff" opacity="0.1"/>
+  <text
+    x="256"
+    y="294"
+    fill="#ffffff"
+    font-family="Inter, Arial, sans-serif"
+    font-size="188"
+    font-weight="800"
+    text-anchor="middle"
+    letter-spacing="0"
+  >CS</text>
+</svg>
