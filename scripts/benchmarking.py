@@ -3,6 +3,11 @@ import os
 os.environ['MKL_THREADING_LAYER'] = 'GNU'
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ.setdefault('OMP_NUM_THREADS', '1')
+os.environ.setdefault('MKL_NUM_THREADS', '1')
+os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
+os.environ.setdefault('NUMEXPR_NUM_THREADS', '1')
+os.environ.setdefault('VECLIB_MAXIMUM_THREADS', '1')
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -142,12 +147,53 @@ def safe_load_audio(audio_entry):
         return None, None
 
 
+def force_audio_array_to_cpu(entry):
+    """Detach synthesized audio from GPU before sending entries to worker processes."""
+    if not isinstance(entry, dict):
+        return entry
+
+    audio = entry.get('audio')
+    if not isinstance(audio, dict) or 'array' not in audio:
+        return entry
+
+    array = audio.get('array')
+    try:
+        if hasattr(array, 'detach'):
+            array = array.detach()
+        if hasattr(array, 'cpu'):
+            array = array.cpu()
+        if hasattr(array, 'numpy'):
+            array = array.numpy()
+        elif array is not None and not isinstance(array, np.ndarray):
+            array = np.asarray(array)
+        audio['array'] = array
+    except Exception as e:
+        print(f"Warning: could not move synthesized audio to CPU: {e}")
+
+    return entry
+
+
+def strip_metric_entry(entry):
+    """Keep only audio fields needed by metric workers to avoid pickling codec tensors."""
+    if not isinstance(entry, dict):
+        return entry
+
+    audio = entry.get('audio')
+    if isinstance(audio, dict):
+        audio = {key: audio[key] for key in ('array', 'sampling_rate', 'path', 'bytes') if key in audio}
+
+    stripped = {'audio': audio}
+    return force_audio_array_to_cpu(stripped)
+
+
 def compute_metrics(original, model, max_duration, save_audio=False):
     orig_array, orig_sr = safe_load_audio(original['audio'])
     model_array, model_sr = safe_load_audio(model['audio'])
     
     if orig_array is None or model_array is None:
         return None 
+    orig_array = np.squeeze(np.asarray(orig_array))
+    model_array = np.squeeze(np.asarray(model_array))
     
     # Check sampling rate mismatch
     if orig_sr != model_sr:
@@ -205,7 +251,17 @@ def process_entry(args):
         return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True, cleanup_cache=False):
+def save_result_snapshot(result_data, output_file_name):
+    """Persist metric results without embedded audio samples."""
+    result_data_for_json = {}
+    for model, data in result_data.items():
+        result_data_for_json[model] = {k: v for k, v in data.items() if k != 'audio_samples'}
+
+    with open(output_file_name, 'w') as out_file:
+        json.dump(result_data_for_json, out_file, indent=4, default=default_converter)
+
+
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True, cleanup_cache=False, cache_dir="cache_original", output_suffix=None):
     start_time = time.time()
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
     if not disk_cache:
@@ -307,7 +363,6 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         # Save original entries to disk to save RAM (if disk_cache enabled)
         if disk_cache:
             print(f"Caching {len(all_entries)} original audio samples to disk...")
-            cache_dir = "cache_original"
             os.makedirs(cache_dir, exist_ok=True)
             original_entries = []
             for i, entry in enumerate(tqdm(all_entries, desc="Caching audio")):
@@ -347,26 +402,38 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     if len(original_entries) > 5000:
         print(f"Warning: Large dataset ({len(original_entries)} samples) - high memory usage expected")
 
+    safe_dataset_name = dataset_name.replace('/', '_').replace(':', '_').replace('?', '_').replace('*', '_')
+    base_filename = f"{safe_dataset_name}_evaluation_results"
+    if output_suffix:
+        safe_suffix = str(output_suffix).replace('/', '_').replace(':', '_').replace('?', '_').replace('*', '_')
+        base_filename = f"{base_filename}_{safe_suffix}"
+    timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
+    output_file_name = f"{base_filename}{timestamp}.json"
+
     result_data = {}
     for model in models:
         
-        # Check if this is an encode-only codec by trying to load it
+        # Check encode-only codecs before instantiation. Some tokenizers download
+        # large checkpoints during __init__, even though they cannot be evaluated.
         try:
-            from SoundCodec.codec import load_codec
-            codec_instance = load_codec(model)
-            if hasattr(codec_instance, 'supports_decode') and not codec_instance.supports_decode:
+            from SoundCodec.codec import codec_supports_decode
+            if not codec_supports_decode(model):
                 print(f"Skipping {model}: encode-only codec (no decoder available)")
                 result_data[model] = {
                     "encode_only": True,
                     "message": "This codec only supports encoding. No reconstruction metrics available."
                 }
-                del codec_instance
-                gc.collect()
+                save_result_snapshot(result_data, output_file_name)
                 continue
-            del codec_instance
-            gc.collect()
         except Exception as e:
-            print(f"Warning: Could not check codec {model}: {e}")
+            print(f"Skipping {model}: could not load codec ({e})")
+            result_data[model] = {
+                "error": str(e),
+                "message": "Codec loading failed before evaluation."
+            }
+            save_result_snapshot(result_data, output_file_name)
+            gc.collect()
+            continue
         
         print(f"Evaluating metrics for model: {model}")
         model_start_time = time.time()
@@ -384,7 +451,17 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             # New mode: apply codec on-the-fly
             from SoundCodec.codec import load_codec
             print(f"Loading codec: {model}")
-            codec_instance = load_codec(model)
+            try:
+                codec_instance = load_codec(model)
+            except Exception as e:
+                print(f"Skipping {model}: could not load codec ({e})")
+                result_data[model] = {
+                    "error": str(e),
+                    "message": "Codec loading failed before synthesis."
+                }
+                save_result_snapshot(result_data, output_file_name)
+                gc.collect()
+                continue
             
             # Create model entries by encoding and decoding original audio
             print(f"Encoding and decoding {len(original_entries)} samples with {model}...")
@@ -395,11 +472,16 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                     # synth() modifies data['audio'] in place, which would corrupt original_entries
                     import copy
                     entry_copy = copy.deepcopy(entry)
+                    if isinstance(entry_copy.get('audio'), dict) and entry_copy['audio'].get('array') is None and entry_copy['audio'].get('path'):
+                        audio_array, audio_sr = sf.read(entry_copy['audio']['path'])
+                        entry_copy['audio']['array'] = audio_array
+                        entry_copy['audio']['sampling_rate'] = entry_copy['audio'].get('sampling_rate') or audio_sr
                     
                     # Synthesize audio using the codec
                     # local_save=disk_cache means it saves to disk only when caching is enabled
                     # The codec will automatically handle resampling to its native SR and back
                     synthesized = codec_instance.synth(entry_copy, local_save=disk_cache and save_audio)
+                    synthesized = strip_metric_entry(synthesized)
                     model_entries.append(synthesized)
                 except Exception as e:
                     print(f"Error synthesizing sample: {e}")
@@ -432,7 +514,15 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                 metrics_results.append(result)
         else:
             # Use multiprocessing
-            metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize, desc=f"Calculating metrics for {model}")
+            try:
+                metrics_results = process_map(process_entry, args_list, max_workers=max_workers, chunksize=chunksize, desc=f"Calculating metrics for {model}")
+            except Exception as e:
+                print(f"Warning: multiprocessing metrics failed for {model}: {e}")
+                print("Retrying metrics sequentially without discarding synthesized audio.")
+                metrics_results = []
+                for args in tqdm(args_list, desc=f"Processing {model}"):
+                    result = process_entry(args)
+                    metrics_results.append(result)
         metrics_results = [metrics for metrics in metrics_results if metrics is not None]
         # Process Dataset END
 
@@ -500,24 +590,11 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         if save_audio and 'audio_samples' in model_result:
             print(f"  Audio samples saved: {len(model_result['audio_samples'])} samples")
         print()
+        save_result_snapshot(result_data, output_file_name)
 
     print(f"Total execution time: {time.time() - start_time:.2f} seconds")
     print(f"Final RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
-
-    # Save results with timestamp if file already exists
-    # Sanitize dataset name for filename (remove invalid characters)
-    safe_dataset_name = dataset_name.replace('/', '_').replace(':', '_').replace('?', '_').replace('*', '_')
-    base_filename = f"{safe_dataset_name}_evaluation_results"
-    timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
-    output_file_name = f"{base_filename}{timestamp}.json"
-
-    # Create a copy without audio_samples for JSON output
-    result_data_for_json = {}
-    for model, data in result_data.items():
-        result_data_for_json[model] = {k: v for k, v in data.items() if k != 'audio_samples'}
-    
-    with open(output_file_name, 'w') as out_file:
-        json.dump(result_data_for_json, out_file, indent=4, default=default_converter)
+    save_result_snapshot(result_data, output_file_name)
 
     print(f"\nResults saved to {output_file_name}")
     
@@ -527,16 +604,30 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     print("="*80)
     for model, data in result_data.items():
         print(f"\n{model.upper()}:")
+        if isinstance(data, dict) and data.get("error"):
+            print(f"  error: {data['error']}")
+            if data.get("message"):
+                print(f"  message: {data['message']}")
+            continue
+        if isinstance(data, dict) and data.get("encode_only"):
+            print("  encode_only: True")
+            if data.get("message"):
+                print(f"  message: {data['message']}")
+            continue
         for category, metrics in data.items():
-            if category != 'audio_samples':
-                print(f"  {category}:")
-                for metric_name, value in metrics.items():
-                    print(f"    {metric_name}: {value:.6f}" if isinstance(value, float) else f"    {metric_name}: {value}")
+            if category == 'audio_samples':
+                continue
+            if not isinstance(metrics, dict):
+                print(f"  {category}: {metrics}")
+                continue
+            print(f"  {category}:")
+            for metric_name, value in metrics.items():
+                print(f"    {metric_name}: {value:.6f}" if isinstance(value, float) else f"    {metric_name}: {value}")
     print("\n" + "="*80)
 
-    if cleanup_cache and disk_cache and not is_presynthesized and os.path.isdir("cache_original"):
-        shutil.rmtree("cache_original")
-        print("Removed temporary cache_original directory.")
+    if cleanup_cache and disk_cache and not is_presynthesized and os.path.isdir(cache_dir):
+        shutil.rmtree(cache_dir)
+        print(f"Removed temporary {cache_dir} directory.")
 
 
 if __name__ == "__main__":
@@ -556,6 +647,10 @@ if __name__ == "__main__":
                         help='Keep audio in memory instead of caching to disk (faster but uses more RAM)')
     parser.add_argument('--cleanup_cache', action='store_true',
                         help='Remove cache_original after direct evaluation completes')
+    parser.add_argument('--cache_dir', default='cache_original',
+                        help='Directory for temporary cached original audio')
+    parser.add_argument('--output_suffix', default=None,
+                        help='Optional suffix for the output JSON filename')
 
     args = parser.parse_args()
     
@@ -563,4 +658,17 @@ if __name__ == "__main__":
     if args.models and len(args.models) == 1 and ',' in args.models[0]:
         args.models = [m.strip() for m in args.models[0].split(',')]
     
-    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio, not args.no_disk_cache, args.cleanup_cache)
+    evaluate_dataset(
+        args.dataset,
+        args.streaming,
+        args.models,
+        args.max_duration,
+        args.max_workers,
+        args.chunksize,
+        args.limit,
+        args.save_audio,
+        not args.no_disk_cache,
+        args.cleanup_cache,
+        args.cache_dir,
+        args.output_suffix,
+    )

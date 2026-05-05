@@ -1,0 +1,56 @@
+{
+    "dac_16k": {
+        "error": "Please install descript-audio-codec first. pip install descript-audio-codec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "encodec_24k_1_5bps": {
+        "error": "Please install encodec first. pip install encodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_en_libritts_16k_gr1nq32ds320": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_zh_en_16k_nq32ds320": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "llmcodec_abl_sa": {
+        "Speech": {
+            "mel": 0.7130122336596251,
+            "stft": 1.5970467028021813,
+            "waveform": 0.033829836840144706,
+            "pesq": 2.1125367211699486,
+            "pesq-wb": 2.1125367211699486,
+            "stoi": 0.8589501456189887,
+            "f0corr": 0.8450048865480349
+        },
+        "overall": {
+            "mel": 1.2393526086620987,
+            "stft": 4.120300380182763,
+            "waveform": 0.06348731688649786,
+            "pesq": 1.9535586760838826,
+            "pesq-wb": 1.9535586760838826,
+            "stoi": 0.664686599465203,
+            "f0corr": 0.6327973331261504
+        },
+        "Audio": {
+            "mel": 1.873169587738812,
+            "stft": 6.878813364595175,
+            "waveform": 0.07249162304219862,
+            "pesq": 1.5602833033204078,
+            "pesq-wb": 1.5602833033204078,
+            "stoi": 0.5193609730203869,
+            "f0corr": 0.288986437601503
+        },
+        "Music": {
+            "mel": 1.1318760045878589,
+            "stft": 3.8850410731509326,
+            "waveform": 0.08414049077715026,
+            "pesq": 2.1878560037612913,
+            "pesq-wb": 2.1878560037612913,
+            "stoi": 0.6157486797562337,
+            "f0corr": 0.7644006752289133
+        }
+    }
+}

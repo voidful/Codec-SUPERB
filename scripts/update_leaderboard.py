@@ -74,6 +74,8 @@ values = {
     'llmcodec_abl_k1': {'bps': 0.5, 'tps': 50},
     'llmcodec_abl_k3': {'bps': 0.5, 'tps': 50},
     'llmcodec_abl_k10': {'bps': 0.5, 'tps': 50},
+    'llmcodec_abl_ftp': {'bps': 0.5, 'tps': 50},
+    'llmcodec_abl_sa': {'bps': 0.5, 'tps': 50},
     'dac_16k': {'bps': 6, 'tps': 50},
     'dac_24k': {'bps': 24, 'tps': 75},
     'dac_44k': {'bps': 8, 'tps': 86},
@@ -121,7 +123,14 @@ for json_file in sorted(json_files, key=os.path.getmtime):
     with open(json_file, 'r') as f:
         file_results = json.load(f)
     for model_name, metrics_data in file_results.items():
-        if isinstance(metrics_data, dict) and metrics_data.get("encode_only"):
+        if not isinstance(metrics_data, dict):
+            continue
+        if metrics_data.get("encode_only") or metrics_data.get("error"):
+            continue
+        if not any(
+            category != "audio_samples" and isinstance(values, dict) and bool(values)
+            for category, values in metrics_data.items()
+        ):
             continue
         benchmark_results[model_name] = metrics_data
         source_files[model_name] = json_file
@@ -141,6 +150,8 @@ for model_name in sorted(benchmark_results):
     
     if is_nested:
         for category, metrics in metrics_data.items():
+            if category == "audio_samples" or not isinstance(metrics, dict):
+                continue
             for m in metrics_to_include:
                 val = metrics.get(m, 0)
                 if val != val: # NaN check

@@ -1,0 +1,106 @@
+{
+    "bigcodec_1k": {
+        "error": "Please install bigcodec first: pip install bigcodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "encodec_24k_12bps": {
+        "error": "Please install encodec first. pip install encodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "encodec_24k_6bps": {
+        "error": "Please install encodec first. pip install encodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_en_libritts_16k_nq32ds640": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "llmcodec_abl_ftp": {
+        "Speech": {
+            "mel": 0.7124036249816418,
+            "stft": 1.596127913236618,
+            "waveform": 0.03381764425037545,
+            "pesq": 2.10907929289341,
+            "pesq-wb": 2.10907929289341,
+            "stoi": 0.85924772462789,
+            "f0corr": 0.8403325516886835
+        },
+        "overall": {
+            "mel": 1.2389245728105307,
+            "stft": 4.120346105786662,
+            "waveform": 0.06342744619941004,
+            "pesq": 1.9512837371031444,
+            "pesq-wb": 1.9512837371031444,
+            "stoi": 0.6646490452890361,
+            "f0corr": 0.6288541794080617
+        },
+        "Audio": {
+            "mel": 1.8733980362266303,
+            "stft": 6.879556365549564,
+            "waveform": 0.07230489710405164,
+            "pesq": 1.562449531197548,
+            "pesq-wb": 1.562449531197548,
+            "stoi": 0.5186873464710675,
+            "f0corr": 0.2819019576171413
+        },
+        "Music": {
+            "mel": 1.13097205722332,
+            "stft": 3.8853540385738015,
+            "waveform": 0.08415979724380304,
+            "pesq": 2.182322387218475,
+            "pesq-wb": 2.182322387218475,
+            "stoi": 0.6160120647681508,
+            "f0corr": 0.7643280289183604
+        }
+    },
+    "s3tokenizer_v2_25hz": {
+        "encode_only": true,
+        "message": "This codec only supports encoding. No reconstruction metrics available."
+    },
+    "sqcodec_16k_12kbps": {
+        "error": "Please install sqcodec first. pip install git+https://github.com/zhai-lw/SQCodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "sqcodec_24k_12kbps": {
+        "error": "Please install sqcodec first. pip install git+https://github.com/zhai-lw/SQCodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "wavtokenizer_24k_large_speech_75token": {
+        "Speech": {
+            "mel": 0.782811348259449,
+            "stft": 1.9159310501813889,
+            "waveform": 0.02378399250487564,
+            "pesq": 2.023707136809826,
+            "pesq-wb": 2.023707136809826,
+            "stoi": 0.8481408645587994,
+            "f0corr": 0.8282065623192466
+        },
+        "overall": {
+            "mel": 1.099082089688008,
+            "stft": 3.5254557026761275,
+            "waveform": 0.05477361943086605,
+            "pesq": 1.7465545581976574,
+            "pesq-wb": 1.7468497051795324,
+            "stoi": 0.6357394270062079,
+            "f0corr": 0.5739987688234736
+        },
+        "Audio": {
+            "mel": 1.315955311924219,
+            "stft": 5.049271383747459,
+            "waveform": 0.07007775800273157,
+            "pesq": 1.4596635937690734,
+            "pesq-wb": 1.4605490347146988,
+            "stoi": 0.48926379444853774,
+            "f0corr": 0.22514052862511016
+        },
+        "Music": {
+            "mel": 1.198479608880356,
+            "stft": 3.611164674099535,
+            "waveform": 0.07045910778499093,
+            "pesq": 1.7562929440140724,
+            "pesq-wb": 1.7562929440140724,
+            "stoi": 0.5698136220112866,
+            "f0corr": 0.6686492155260639
+        }
+    }
+}

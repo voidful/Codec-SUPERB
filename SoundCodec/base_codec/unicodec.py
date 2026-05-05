@@ -70,13 +70,24 @@ class UnicodecBaseCodec(BaseCodec):
 
         # Monkeypatch fairseq before it initializes hydra
         import sys
+        import types
         from unittest.mock import MagicMock
         
         # Suppress ANTLR parser import errors
         sys.modules['fairseq.dataclass.utils'] = MagicMock()
-        
-        import fairseq.dataclass.initialize
-        fairseq.dataclass.initialize.hydra_init = MagicMock()
+        initialize_module = types.ModuleType('fairseq.dataclass.initialize')
+        initialize_module.hydra_init = lambda: None
+        sys.modules['fairseq.dataclass.initialize'] = initialize_module
+        try:
+            import fairseq
+            if hasattr(fairseq, 'dataclass'):
+                fairseq.dataclass.initialize = initialize_module
+        except ImportError:
+            fairseq_mock = MagicMock()
+            fairseq_mock.dataclass.initialize.hydra_init = MagicMock()
+            sys.modules.setdefault('fairseq', fairseq_mock)
+            sys.modules.setdefault('fairseq.dataclass', fairseq_mock.dataclass)
+            sys.modules.setdefault('fairseq.dataclass.initialize', fairseq_mock.dataclass.initialize)
         try:
             from unicodec.decoder.pretrained import Unicodec as UniCodec
         except Exception as e:

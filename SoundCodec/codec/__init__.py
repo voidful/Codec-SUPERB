@@ -9,6 +9,11 @@ def load_codec(codec_name):
     return codec
 
 
+def codec_supports_decode(codec_name):
+    module = __import__(f"SoundCodec.codec.{codec_name}", fromlist=[codec_name])
+    return getattr(module.Codec, "supports_decode", True)
+
+
 def list_codec(ignore_list=['__init__.py', 'general.py']):
     dataset_dir = os.path.dirname(os.path.abspath(__file__))
     files = os.listdir(dataset_dir)
