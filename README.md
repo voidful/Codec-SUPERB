@@ -4,7 +4,7 @@
 
 ![Overview](img/Overview.png)
 
-[![Project Page](https://img.shields.io/badge/Project-Page-Green?style=for-the-badge)](https://codecsuperb.com/)
+[![Project Page](https://img.shields.io/badge/Project-Page-Green?style=for-the-badge)](https://eric-lam.com/Codec-SUPERB/)
 [![Paper](https://img.shields.io/badge/Paper-Arxiv-red?style=for-the-badge)](https://arxiv.org/abs/2402.13071)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
