@@ -17,6 +17,7 @@ import argparse
 import json
 import gc
 import time
+import shutil
 import soundfile as sf
 import io
 import numpy as np
@@ -204,7 +205,7 @@ def process_entry(args):
         return {}
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True, cleanup_cache=False):
     start_time = time.time()
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
     if not disk_cache:
@@ -254,6 +255,10 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
             if limit is not None:
                 original_entries = original_entries[:limit]
             print(f"Cached {len(original_entries)} original entries")
+            entries_metadata = [
+                {'id': e.get('id', f'sample_{i}'), 'category': e.get('category', 'overall')}
+                for i, e in enumerate(original_entries)
+            ]
     
     # Handle direct evaluation mode (either originally or after fallback)
     if not is_presynthesized:
@@ -302,12 +307,13 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
         # Save original entries to disk to save RAM (if disk_cache enabled)
         if disk_cache:
             print(f"Caching {len(all_entries)} original audio samples to disk...")
-            os.makedirs("cache_original", exist_ok=True)
+            cache_dir = "cache_original"
+            os.makedirs(cache_dir, exist_ok=True)
             original_entries = []
             for i, entry in enumerate(tqdm(all_entries, desc="Caching audio")):
                 try:
                     # Save audio and keep only metadata + path
-                    audio_path = os.path.join("cache_original", f"orig_{i}_{entry.get('id', 'sample')}.wav")
+                    audio_path = os.path.join(cache_dir, f"orig_{i}_{entry.get('id', 'sample')}.wav")
                     sf.write(audio_path, entry['audio']['array'], entry['audio']['sampling_rate'])
                     
                     # Keep only what we need
@@ -393,7 +399,7 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                     # Synthesize audio using the codec
                     # local_save=disk_cache means it saves to disk only when caching is enabled
                     # The codec will automatically handle resampling to its native SR and back
-                    synthesized = codec_instance.synth(entry_copy, local_save=disk_cache)
+                    synthesized = codec_instance.synth(entry_copy, local_save=disk_cache and save_audio)
                     model_entries.append(synthesized)
                 except Exception as e:
                     print(f"Error synthesizing sample: {e}")
@@ -528,6 +534,10 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
                     print(f"    {metric_name}: {value:.6f}" if isinstance(value, float) else f"    {metric_name}: {value}")
     print("\n" + "="*80)
 
+    if cleanup_cache and disk_cache and not is_presynthesized and os.path.isdir("cache_original"):
+        shutil.rmtree("cache_original")
+        print("Removed temporary cache_original directory.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate audio datasets.')
@@ -544,6 +554,8 @@ if __name__ == "__main__":
                         help='Disable saving original and reconstructed audio samples (saves by default)')
     parser.add_argument('--no-disk-cache', action='store_true', dest='no_disk_cache',
                         help='Keep audio in memory instead of caching to disk (faster but uses more RAM)')
+    parser.add_argument('--cleanup_cache', action='store_true',
+                        help='Remove cache_original after direct evaluation completes')
 
     args = parser.parse_args()
     
@@ -551,4 +563,4 @@ if __name__ == "__main__":
     if args.models and len(args.models) == 1 and ',' in args.models[0]:
         args.models = [m.strip() for m in args.models[0].split(',')]
     
-    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio, not args.no_disk_cache)
+    evaluate_dataset(args.dataset, args.streaming, args.models, args.max_duration, args.max_workers, args.chunksize, args.limit, args.save_audio, not args.no_disk_cache, args.cleanup_cache)

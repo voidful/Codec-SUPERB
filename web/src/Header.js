@@ -1,19 +1,13 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Github, FileText, Zap } from 'lucide-react';
+import { Database, FileText, Github, Quote } from 'lucide-react';
 import './Header.css';
 
 function Header() {
   return (
-    <motion.header
-      className="glass-panel"
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
+    <header>
       <div className="header-logo">
-        <Zap className="logo-icon" size={28} />
-        <span className="text-gradient">Codec Superb</span>
+        <span className="logo-mark">CS</span>
+        <span>Codec-SUPERB</span>
       </div>
       <nav>
         <ul>
@@ -24,14 +18,26 @@ function Header() {
             </a>
           </li>
           <li>
-            <a href="https://github.com/voidful/Codec-SUPERB" className="nav-link">
+            <a href="#leaderboard" className="nav-link">
+              <Database size={18} />
+              <span>Results</span>
+            </a>
+          </li>
+          <li>
+            <a href="#citation" className="nav-link">
+              <Quote size={18} />
+              <span>Citation</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/voidful/Codec-SUPERB" className="nav-link external-link">
               <Github size={18} />
-              <span>Code</span>
+              <span>GitHub</span>
             </a>
           </li>
         </ul>
       </nav>
-    </motion.header>
+    </header>
   );
 }
 

@@ -1,16 +1,6 @@
-import json
-
 import glob
+import json
 import os
-
-# Load latest benchmark results
-json_files = glob.glob('*codec-superb-tiny_synth_evaluation_results*.json')
-if not json_files:
-    raise FileNotFoundError("No benchmark results found.")
-latest_file = max(json_files, key=os.path.getmtime)
-print(f"Loading results from {latest_file}")
-with open(latest_file, 'r') as f:
-    benchmark_results = json.load(f)
 
 # Hardcoded BPS mapping (bitrate in kbps or as used in data.js)
 # Exact BPS and TPS mapping
@@ -81,6 +71,9 @@ values = {
     'auv': {'bps': 0.5, 'tps': 50},
     'bigcodec_1k': {'bps': 1, 'tps': 80},
     'llmcodec': {'bps': 0.5, 'tps': 50},  # Based on AUV architecture
+    'llmcodec_abl_k1': {'bps': 0.5, 'tps': 50},
+    'llmcodec_abl_k3': {'bps': 0.5, 'tps': 50},
+    'llmcodec_abl_k10': {'bps': 0.5, 'tps': 50},
     'dac_16k': {'bps': 6, 'tps': 50},
     'dac_24k': {'bps': 24, 'tps': 75},
     'dac_44k': {'bps': 8, 'tps': 86},
@@ -117,9 +110,26 @@ values = {
 # Metrics to include
 metrics_to_include = ['mel', 'pesq', 'stoi', 'f0corr']
 
+json_files = glob.glob('*codec-superb-tiny*evaluation_results*.json')
+if not json_files:
+    raise FileNotFoundError("No codec-superb-tiny benchmark results found.")
+
+benchmark_results = {}
+source_files = {}
+for json_file in sorted(json_files, key=os.path.getmtime):
+    print(f"Reading results from {json_file}")
+    with open(json_file, 'r') as f:
+        file_results = json.load(f)
+    for model_name, metrics_data in file_results.items():
+        if isinstance(metrics_data, dict) and metrics_data.get("encode_only"):
+            continue
+        benchmark_results[model_name] = metrics_data
+        source_files[model_name] = json_file
+
 new_results = {}
 
-for model_name, metrics_data in benchmark_results.items():
+for model_name in sorted(benchmark_results):
+    metrics_data = benchmark_results[model_name]
     model_values = values.get(model_name, {'bps': 0, 'tps': 0})
     entry = {
         'bps': model_values['bps'],
@@ -154,3 +164,5 @@ with open('web/src/results/data.js', 'w') as f:
     f.write(js_content)
 
 print(f"Updated web/src/results/data.js with {len(new_results)} codecs.")
+for model_name, source_file in sorted(source_files.items()):
+    print(f"  {model_name}: {source_file}")

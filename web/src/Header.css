@@ -2,32 +2,44 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  margin: 1.5rem 2rem;
+  width: min(1180px, calc(100% - 40px));
+  min-height: 4.25rem;
+  margin: 0 auto;
+  padding: 0;
   position: sticky;
-  top: 1rem;
+  top: 0;
   z-index: 1000;
-  transition: var(--transition-normal);
+  background: rgba(248, 249, 251, 0.94);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .header-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  gap: 0.65rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 720;
 }
 
-.logo-icon {
-  color: var(--primary-color);
-  filter: drop-shadow(0 0 8px var(--primary-glow));
+.logo-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--text-primary);
+  border-radius: 5px;
+  font-size: 0.78rem;
+  letter-spacing: 0;
 }
 
 nav ul {
   list-style: none;
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .nav-link {
@@ -36,34 +48,36 @@ nav ul {
   gap: 0.5rem;
   text-decoration: none;
   color: var(--text-secondary);
-  font-size: 1rem;
-  font-weight: 500;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.55rem 0.7rem;
+  border-radius: 6px;
   transition: var(--transition-fast);
 }
 
 .nav-link:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent-color);
+  background: var(--surface-color);
 }
 
-.nav-link svg {
-  transition: transform var(--transition-fast);
-}
-
-.nav-link:hover svg {
-  transform: translateY(-2px);
-  color: var(--primary-color);
+.external-link {
+  border: 1px solid var(--border-color);
 }
 
 @media (max-width: 640px) {
   header {
-    margin: 1rem;
-    padding: 1rem;
+    width: min(100% - 24px, 1180px);
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
   }
 
-  .header-logo span {
+  nav ul {
+    flex-wrap: wrap;
+  }
+
+  .nav-link svg {
     display: none;
   }
 }

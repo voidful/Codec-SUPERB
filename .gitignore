@@ -13,6 +13,7 @@
 
 __pycache__/
 .DS_Store
+*.egg-info/
 
 # Models
 wavtokenizer_model/

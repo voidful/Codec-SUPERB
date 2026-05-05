@@ -8,7 +8,7 @@
 [![Paper](https://img.shields.io/badge/Paper-Arxiv-red?style=for-the-badge)](https://arxiv.org/abs/2402.13071)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-**A comprehensive benchmark evaluating audio codec models across diverse speech processing tasks.**
+**Official project repository for the Codec-SUPERB benchmark and codec-superb-tiny regression results.**
 
 </div>
 
@@ -16,7 +16,7 @@
 
 ## 📖 Introduction
 
-**Codec-SUPERB** sets a new standard for evaluating sound codec models. We provide a rigorous and transparent framework for assessing speech quality and information preservation across various downstream tasks. Our goal is to foster innovation and facilitate community collaboration in the field of neural audio coding.
+**Codec-SUPERB** evaluates neural sound codec models through downstream speech, audio, and music tasks. The benchmark focuses on whether codec tokenization and reconstruction preserve task-relevant information, and it provides a unified protocol for comparing codec families under consistent evaluation conditions.
 
 ---
 
@@ -101,33 +101,59 @@ results = model.batch_synth(data_list, local_save=False)
 
 ## 🎯 Benchmarking & Leaderboard
 
-Follow these steps to evaluate your codec and contribute to the [Official Leaderboard](https://codecsuperb.com).
+The website leaderboard is generated from reruns on [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny), a 6,000-row Hugging Face subset with Speech, Audio, and Music splits. The dataset download is about 3.2 GB, so prefer targeted model reruns and cleanup flags when working on shared disks.
 
-### 1. Synthesize the Test Set
+### Tiny Rerun Command
 
-Use the [voidful/codec-superb-tiny](https://huggingface.co/datasets/voidful/codec-superb-tiny) dataset:
+Run the ablation codecs directly on the tiny dataset without saving reconstructed audio files:
 
 ```bash
-PYTHONPATH=. python3 scripts/dataset_creator.py --dataset voidful/codec-superb-tiny
+PYTHONPATH=. python3 scripts/benchmarking.py \
+    --dataset voidful/codec-superb-tiny \
+    --models llmcodec_abl_k1 llmcodec_abl_k3 llmcodec_abl_k10 \
+    --max_workers 1 \
+    --no_save_audio \
+    --cleanup_cache
 ```
 
-### 2. Calculate Metrics
+`--no_save_audio` prevents large `reconstructed_*` folders, and `--cleanup_cache` removes the temporary `cache_original` directory after evaluation. Omit `--cleanup_cache` only when you intentionally want to reuse the cached original WAVs for another immediate run.
 
-Compute standard metrics (MEL, PESQ, STOI, F0Corr):
+### Update the Web Leaderboard
+
+After benchmark JSON files are generated, rebuild the React data file:
 
 ```bash
-# Benchmark all codecs
-PYTHONPATH=. python3 scripts/benchmarking.py --dataset datasets/voidful/codec-superb-tiny_synth
+python3 scripts/update_leaderboard.py
+```
 
-# Benchmark only specific codec(s)
+The updater scans `*codec-superb-tiny*evaluation_results*.json`, keeps the latest result for each model, and writes `web/src/results/data.js`.
+
+### Current Tiny Rerun Results
+
+| Model | BPS | TPS | Overall MEL (lower) | Overall PESQ (higher) | Overall STOI (higher) | Overall F0Corr (higher) | Source artifact |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `llmcodec_abl_k1` | 0.5 | 50 | 1.225 | 1.935 | 0.657 | 0.619 | `voidful_codec-superb-tiny_evaluation_results_20260312_222533.json` |
+| `llmcodec_abl_k3` | 0.5 | 50 | 1.219 | 1.934 | 0.659 | 0.616 | `voidful_codec-superb-tiny_evaluation_results_20260313_000723.json` |
+| `llmcodec_abl_k10` | 0.5 | 50 | 1.223 | 1.936 | 0.659 | 0.620 | `voidful_codec-superb-tiny_evaluation_results_20260313_014706.json` |
+
+### Optional Pre-Synthesized Workflow
+
+For larger sweeps where repeated metric runs are needed, you can still create a synthesized dataset first. This uses more disk space because each codec split is materialized.
+
+```bash
+PYTHONPATH=. python3 scripts/dataset_creator.py \
+    --dataset voidful/codec-superb-tiny \
+    --specific_codecs llmcodec_abl_k1 llmcodec_abl_k3 llmcodec_abl_k10
+
 PYTHONPATH=. python3 scripts/benchmarking.py \
     --dataset datasets/voidful/codec-superb-tiny_synth \
-    --models llmcodec
+    --models llmcodec_abl_k1 llmcodec_abl_k3 llmcodec_abl_k10 \
+    --no_save_audio
 ```
 
-### 3. Submit Results
+### Submit Results
 
-1. Locate the generated JSON file: `datasets_voidful_codec-superb-tiny_synth_evaluation_results_*.json`.
+1. Locate the generated JSON file, such as `voidful_codec-superb-tiny_evaluation_results*.json` for direct tiny reruns or `datasets_voidful_codec-superb-tiny_synth_evaluation_results*.json` for pre-synthesized reruns.
 2. Open a **New Issue** in this repository titled `New Benchmark Result: [Codec Name]`.
 3. Attach the JSON file or paste its content.
 
