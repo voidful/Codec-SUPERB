@@ -22,7 +22,7 @@ From the repository root, run:
 python3 scripts/update_leaderboard.py
 ```
 
-The script reads the latest `*codec-superb-tiny*evaluation_results*.json` file for each model and rewrites `web/src/results/data.js`.
+The script reads result JSON files from `results/codec-superb-tiny/`, excludes `llmcodec_abl_*` variants from the published leaderboard, and rewrites `web/src/results/data.js`.
 
 ## Deployment Notes
 

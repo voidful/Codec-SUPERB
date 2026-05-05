@@ -1,0 +1,6 @@
+{
+    "sqcodec_24k_12kbps": {
+        "error": "Please install sqcodec first. pip install git+https://github.com/zhai-lw/SQCodec",
+        "message": "Codec loading failed before synthesis."
+    }
+}

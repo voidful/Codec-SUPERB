@@ -32,3 +32,6 @@ test_imports_detailed.py
 cached_datasets/
 datasets/
 *_evaluation_results*.json
+!results/
+!results/codec-superb-tiny/
+!results/codec-superb-tiny/*_evaluation_results*.json

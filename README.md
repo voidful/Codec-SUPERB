@@ -105,18 +105,19 @@ The website leaderboard is generated from reruns on [voidful/codec-superb-tiny](
 
 ### Tiny Rerun Command
 
-Run the ablation codecs directly on the tiny dataset without saving reconstructed audio files:
+Run targeted codecs directly on the tiny dataset without saving reconstructed audio files:
 
 ```bash
 PYTHONPATH=. python3 scripts/benchmarking.py \
     --dataset voidful/codec-superb-tiny \
-    --models llmcodec_abl_k1 llmcodec_abl_k3 llmcodec_abl_k10 \
+    --models llmcodec bigcodec_1k auv \
     --max_workers 1 \
+    --output_dir results/codec-superb-tiny \
     --no_save_audio \
     --cleanup_cache
 ```
 
-`--no_save_audio` prevents large `reconstructed_*` folders, and `--cleanup_cache` removes the temporary `cache_original` directory after evaluation. Omit `--cleanup_cache` only when you intentionally want to reuse the cached original WAVs for another immediate run.
+`--no_save_audio` prevents large `reconstructed_*` folders, `--cleanup_cache` removes the temporary `cache_original` directory after evaluation, and `--output_dir` keeps result JSON files under `results/codec-superb-tiny/`. Omit `--cleanup_cache` only when you intentionally want to reuse the cached original WAVs for another immediate run.
 
 ### Update the Web Leaderboard
 
@@ -126,15 +127,11 @@ After benchmark JSON files are generated, rebuild the React data file:
 python3 scripts/update_leaderboard.py
 ```
 
-The updater scans `*codec-superb-tiny*evaluation_results*.json`, keeps the latest result for each model, and writes `web/src/results/data.js`.
+The updater scans `results/codec-superb-tiny/*codec-superb-tiny*evaluation_results*.json`, ignores temporary cache directories, excludes `llmcodec_abl_*` variants from the published leaderboard, and writes `web/src/results/data.js`.
 
 ### Current Tiny Rerun Results
 
-| Model | BPS | TPS | Overall MEL (lower) | Overall PESQ (higher) | Overall STOI (higher) | Overall F0Corr (higher) | Source artifact |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `llmcodec_abl_k1` | 0.5 | 50 | 1.225 | 1.935 | 0.657 | 0.619 | `voidful_codec-superb-tiny_evaluation_results_20260312_222533.json` |
-| `llmcodec_abl_k3` | 0.5 | 50 | 1.219 | 1.934 | 0.659 | 0.616 | `voidful_codec-superb-tiny_evaluation_results_20260313_000723.json` |
-| `llmcodec_abl_k10` | 0.5 | 50 | 1.223 | 1.936 | 0.659 | 0.620 | `voidful_codec-superb-tiny_evaluation_results_20260313_014706.json` |
+The committed tiny result artifacts live in `results/codec-superb-tiny/`. The generated website shows per-metric direction labels, BPS/TPS grouped visual analysis, and the full sortable table.
 
 ### Optional Pre-Synthesized Workflow
 
@@ -143,17 +140,18 @@ For larger sweeps where repeated metric runs are needed, you can still create a 
 ```bash
 PYTHONPATH=. python3 scripts/dataset_creator.py \
     --dataset voidful/codec-superb-tiny \
-    --specific_codecs llmcodec_abl_k1 llmcodec_abl_k3 llmcodec_abl_k10
+    --specific_codecs llmcodec bigcodec_1k auv
 
 PYTHONPATH=. python3 scripts/benchmarking.py \
     --dataset datasets/voidful/codec-superb-tiny_synth \
-    --models llmcodec_abl_k1 llmcodec_abl_k3 llmcodec_abl_k10 \
+    --models llmcodec bigcodec_1k auv \
+    --output_dir results/codec-superb-tiny \
     --no_save_audio
 ```
 
 ### Submit Results
 
-1. Locate the generated JSON file, such as `voidful_codec-superb-tiny_evaluation_results*.json` for direct tiny reruns or `datasets_voidful_codec-superb-tiny_synth_evaluation_results*.json` for pre-synthesized reruns.
+1. Locate the generated JSON file under `results/codec-superb-tiny/`, such as `voidful_codec-superb-tiny_evaluation_results*.json` for direct tiny reruns or `datasets_voidful_codec-superb-tiny_synth_evaluation_results*.json` for pre-synthesized reruns.
 2. Open a **New Issue** in this repository titled `New Benchmark Result: [Codec Name]`.
 3. Attach the JSON file or paste its content.
 

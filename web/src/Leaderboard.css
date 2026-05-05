@@ -79,6 +79,35 @@ th.sorted {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  justify-content: center;
+}
+
+.metric-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  min-width: 5.75rem;
+  line-height: 1.15;
+}
+
+.metric-name {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.metric-direction {
+  font-size: 0.66rem;
+  font-weight: 650;
+  text-transform: none;
+}
+
+.metric-direction.lower {
+  color: #b45309;
+}
+
+.metric-direction.higher {
+  color: #047857;
 }
 
 .sort-icon {

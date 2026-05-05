@@ -15,44 +15,6 @@
         "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
         "message": "Codec loading failed before evaluation."
     },
-    "llmcodec_abl_ftp": {
-        "Speech": {
-            "mel": 0.7124036249816418,
-            "stft": 1.596127913236618,
-            "waveform": 0.03381764425037545,
-            "pesq": 2.10907929289341,
-            "pesq-wb": 2.10907929289341,
-            "stoi": 0.85924772462789,
-            "f0corr": 0.8403325516886835
-        },
-        "overall": {
-            "mel": 1.2389245728105307,
-            "stft": 4.120346105786662,
-            "waveform": 0.06342744619941004,
-            "pesq": 1.9512837371031444,
-            "pesq-wb": 1.9512837371031444,
-            "stoi": 0.6646490452890361,
-            "f0corr": 0.6288541794080617
-        },
-        "Audio": {
-            "mel": 1.8733980362266303,
-            "stft": 6.879556365549564,
-            "waveform": 0.07230489710405164,
-            "pesq": 1.562449531197548,
-            "pesq-wb": 1.562449531197548,
-            "stoi": 0.5186873464710675,
-            "f0corr": 0.2819019576171413
-        },
-        "Music": {
-            "mel": 1.13097205722332,
-            "stft": 3.8853540385738015,
-            "waveform": 0.08415979724380304,
-            "pesq": 2.182322387218475,
-            "pesq-wb": 2.182322387218475,
-            "stoi": 0.6160120647681508,
-            "f0corr": 0.7643280289183604
-        }
-    },
     "s3tokenizer_v2_25hz": {
         "encode_only": true,
         "message": "This codec only supports encoding. No reconstruction metrics available."

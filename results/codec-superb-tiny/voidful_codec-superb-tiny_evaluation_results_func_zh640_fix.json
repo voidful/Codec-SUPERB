@@ -1,0 +1,6 @@
+{
+    "funcodec_zh_en_16k_nq32ds640": {
+        "error": "PytorchStreamReader failed reading zip archive: failed finding central directory",
+        "message": "Codec loading failed before synthesis."
+    }
+}

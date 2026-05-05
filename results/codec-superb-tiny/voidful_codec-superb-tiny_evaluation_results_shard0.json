@@ -1,0 +1,42 @@
+{
+    "audiodec_24k_320d": {
+        "error": "Please install AudioDec first. pip install git+https://github.com/voidful/AudioDec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "dac_24k": {
+        "error": "Please install descript-audio-codec first. pip install descript-audio-codec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "encodec_24k_24bps": {
+        "error": "Please install encodec first. pip install encodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_en_libritts_16k_gr8nq32ds320": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_zh_en_16k_nq32ds640": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "s3tokenizer_v1": {
+        "error": "Please install s3tokenizer first: pip install s3tokenizer",
+        "message": "Codec loading failed before evaluation."
+    },
+    "speech_tokenizer_16k": {
+        "error": "Please install SpeechTokenizer first. pip install -U speechtokenizer. Error: No module named 'beartype'",
+        "message": "Codec loading failed before evaluation."
+    },
+    "sqcodec_16k_3kbps": {
+        "error": "Please install sqcodec first. pip install git+https://github.com/zhai-lw/SQCodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "unicodec_24k": {
+        "error": "No module named 'fairseq'",
+        "message": "Codec loading failed before evaluation."
+    },
+    "wavtokenizer_24k_small_600_4096": {
+        "error": "Please install wavtokenizer first. pip install git+https://github.com/voidful/WavTokenizer.git",
+        "message": "Codec loading failed before evaluation."
+    }
+}

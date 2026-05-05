@@ -1,6 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+global.ResizeObserver = ResizeObserverMock;
+
 test('renders the Codec-SUPERB paper page', () => {
   render(<App />);
   expect(
@@ -9,5 +17,6 @@ test('renders the Codec-SUPERB paper page', () => {
     })
   ).toBeInTheDocument();
   expect(screen.getByText(/Latest codec-superb-tiny results/i)).toBeInTheDocument();
-  expect(screen.getAllByText(/llmcodec_abl_k3/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/BPS\/TPS Analysis/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/llmcodec/i).length).toBeGreaterThan(0);
 });

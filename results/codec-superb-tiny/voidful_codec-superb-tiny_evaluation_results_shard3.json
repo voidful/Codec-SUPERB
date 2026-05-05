@@ -1,0 +1,18 @@
+{
+    "dac_16k": {
+        "error": "Please install descript-audio-codec first. pip install descript-audio-codec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "encodec_24k_1_5bps": {
+        "error": "Please install encodec first. pip install encodec",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_en_libritts_16k_gr1nq32ds320": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    },
+    "funcodec_zh_en_16k_nq32ds320": {
+        "error": "Please install funcodec first. pip install git+https://github.com/voidful/FunCodec.git",
+        "message": "Codec loading failed before evaluation."
+    }
+}

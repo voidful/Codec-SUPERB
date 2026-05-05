@@ -261,7 +261,7 @@ def save_result_snapshot(result_data, output_file_name):
         json.dump(result_data_for_json, out_file, indent=4, default=default_converter)
 
 
-def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True, cleanup_cache=False, cache_dir="cache_original", output_suffix=None):
+def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration=120, max_workers=4, chunksize=10, limit=None, save_audio=True, disk_cache=True, cleanup_cache=False, cache_dir="cache_original", output_suffix=None, output_dir=os.path.join("results", "codec-superb-tiny")):
     start_time = time.time()
     print(f"Initial RAM used: {psutil.Process().memory_info().rss / (1024 * 1024):.2f} MB")
     if not disk_cache:
@@ -407,8 +407,13 @@ def evaluate_dataset(dataset_name, is_stream, specific_models=None, max_duration
     if output_suffix:
         safe_suffix = str(output_suffix).replace('/', '_').replace(':', '_').replace('?', '_').replace('*', '_')
         base_filename = f"{base_filename}_{safe_suffix}"
-    timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{base_filename}.json") else ""
-    output_file_name = f"{base_filename}{timestamp}.json"
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        output_stem = os.path.join(output_dir, base_filename)
+    else:
+        output_stem = base_filename
+    timestamp = datetime.now().strftime("_%Y%m%d_%H%M%S") if os.path.exists(f"{output_stem}.json") else ""
+    output_file_name = f"{output_stem}{timestamp}.json"
 
     result_data = {}
     for model in models:
@@ -651,6 +656,8 @@ if __name__ == "__main__":
                         help='Directory for temporary cached original audio')
     parser.add_argument('--output_suffix', default=None,
                         help='Optional suffix for the output JSON filename')
+    parser.add_argument('--output_dir', default=os.path.join("results", "codec-superb-tiny"),
+                        help='Directory for benchmark result JSON files')
 
     args = parser.parse_args()
     
@@ -671,4 +678,5 @@ if __name__ == "__main__":
         args.cleanup_cache,
         args.cache_dir,
         args.output_suffix,
+        args.output_dir,
     )

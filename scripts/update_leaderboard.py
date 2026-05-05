@@ -1,6 +1,11 @@
 import glob
 import json
 import os
+import re
+
+DEFAULT_RESULTS_DIR = os.path.join("results", "codec-superb-tiny")
+RESULTS_DIR = os.environ.get("CODEC_SUPERB_RESULTS_DIR", DEFAULT_RESULTS_DIR)
+EXCLUDED_MODEL_PREFIXES = ("llmcodec_abl_",)
 
 # Hardcoded BPS mapping (bitrate in kbps or as used in data.js)
 # Exact BPS and TPS mapping
@@ -71,11 +76,6 @@ values = {
     'auv': {'bps': 0.5, 'tps': 50},
     'bigcodec_1k': {'bps': 1, 'tps': 80},
     'llmcodec': {'bps': 0.5, 'tps': 50},  # Based on AUV architecture
-    'llmcodec_abl_k1': {'bps': 0.5, 'tps': 50},
-    'llmcodec_abl_k3': {'bps': 0.5, 'tps': 50},
-    'llmcodec_abl_k10': {'bps': 0.5, 'tps': 50},
-    'llmcodec_abl_ftp': {'bps': 0.5, 'tps': 50},
-    'llmcodec_abl_sa': {'bps': 0.5, 'tps': 50},
     'dac_16k': {'bps': 6, 'tps': 50},
     'dac_24k': {'bps': 24, 'tps': 75},
     'dac_44k': {'bps': 8, 'tps': 86},
@@ -112,28 +112,47 @@ values = {
 # Metrics to include
 metrics_to_include = ['mel', 'pesq', 'stoi', 'f0corr']
 
-json_files = glob.glob('*codec-superb-tiny*evaluation_results*.json')
+def is_excluded_model(model_name):
+    return model_name.startswith(EXCLUDED_MODEL_PREFIXES)
+
+
+def file_sort_key(path):
+    basename = os.path.basename(path)
+    match = re.search(r'_(\d{8})_(\d{6})(?:\.json)?$', basename)
+    if match:
+        return (1, match.group(1), match.group(2), basename)
+    return (0, "", "", basename)
+
+
+def has_benchmark_metrics(metrics_data):
+    if not isinstance(metrics_data, dict):
+        return False
+    if metrics_data.get("encode_only") or metrics_data.get("error"):
+        return False
+    return any(
+        category != "audio_samples" and isinstance(values, dict) and bool(values)
+        for category, values in metrics_data.items()
+    )
+
+
+json_files = glob.glob(os.path.join(RESULTS_DIR, '*codec-superb-tiny*evaluation_results*.json'))
 if not json_files:
-    raise FileNotFoundError("No codec-superb-tiny benchmark results found.")
+    raise FileNotFoundError(f"No codec-superb-tiny benchmark results found in {RESULTS_DIR}.")
 
 benchmark_results = {}
 source_files = {}
-for json_file in sorted(json_files, key=os.path.getmtime):
-    print(f"Reading results from {json_file}")
+for json_file in sorted(json_files, key=file_sort_key):
+    rel_json_file = os.path.relpath(json_file)
+    print(f"Reading results from {rel_json_file}")
     with open(json_file, 'r') as f:
         file_results = json.load(f)
     for model_name, metrics_data in file_results.items():
-        if not isinstance(metrics_data, dict):
+        if is_excluded_model(model_name):
             continue
-        if metrics_data.get("encode_only") or metrics_data.get("error"):
-            continue
-        if not any(
-            category != "audio_samples" and isinstance(values, dict) and bool(values)
-            for category, values in metrics_data.items()
-        ):
+        if not has_benchmark_metrics(metrics_data):
             continue
         benchmark_results[model_name] = metrics_data
-        source_files[model_name] = json_file
+        source_files[model_name] = rel_json_file
 
 new_results = {}
 

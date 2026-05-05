@@ -3,6 +3,13 @@ import { useTable, useSortBy } from 'react-table';
 import { ChevronUp, ChevronDown, SortAsc } from 'lucide-react';
 import './Leaderboard.css';
 
+const metricInfo = {
+  mel: { label: 'MEL', direction: 'Lower is better', tone: 'lower' },
+  pesq: { label: 'PESQ', direction: 'Higher is better', tone: 'higher' },
+  stoi: { label: 'STOI', direction: 'Higher is better', tone: 'higher' },
+  f0corr: { label: 'F0Corr', direction: 'Higher is better', tone: 'higher' },
+};
+
 const Leaderboard = ({ results }) => {
   const data = React.useMemo(() => {
     return Object.entries(results).map(([key, value]) => ({
@@ -28,9 +35,15 @@ const Leaderboard = ({ results }) => {
     categories.forEach(cat => {
       const catColumns = metrics_keys.map(m => {
         const key = `${cat.toLowerCase()}_${m}`;
+        const metric = metricInfo[m];
         if (key in firstItem || true) { // Force inclusion or check existence
           return {
-            Header: m.toUpperCase(),
+            Header: (
+              <span className="metric-heading">
+                <span className="metric-name">{metric.label}</span>
+                <span className={`metric-direction ${metric.tone}`}>{metric.direction}</span>
+              </span>
+            ),
             accessor: key,
             sortType: 'basic',
           };

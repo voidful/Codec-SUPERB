@@ -1,5 +1,6 @@
 import React from 'react';
 import Leaderboard from './Leaderboard'
+import ResultsAnalysis from './ResultsAnalysis';
 import './App.css'
 import Header from './Header';
 import results from './results/data';
@@ -58,7 +59,8 @@ function App() {
             <p>
               Metrics are averaged over the 6,000-example tiny dataset and grouped by
               Speech, Audio, Music, and Overall. Lower MEL is better; higher PESQ, STOI,
-              and F0Corr are better.
+              and F0Corr are better. LLMCodec ablation variants are excluded from the
+              published leaderboard.
             </p>
           </div>
           <dl className="result-facts">
@@ -78,6 +80,7 @@ function App() {
         </section>
 
         <section className="leaderboard-section" aria-label="Codec-SUPERB leaderboard">
+          <ResultsAnalysis results={results} />
           <Leaderboard results={results} />
         </section>
 

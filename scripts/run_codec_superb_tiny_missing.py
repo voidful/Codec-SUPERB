@@ -7,6 +7,9 @@ import shutil
 from SoundCodec.codec import list_codec
 from scripts.benchmarking import evaluate_dataset
 
+DEFAULT_RESULTS_DIR = os.path.join("results", "codec-superb-tiny")
+EXCLUDED_MODEL_PREFIXES = ("llmcodec_abl_",)
+
 
 def is_completed_result(metrics):
     if not isinstance(metrics, dict) or metrics.get("error"):
@@ -19,12 +22,15 @@ def is_completed_result(metrics):
     )
 
 
-def collect_completed_models():
+def collect_completed_models(results_dir=DEFAULT_RESULTS_DIR):
     completed = set()
-    for path in sorted(glob.glob("*codec-superb-tiny*evaluation_results*.json")):
+    pattern = os.path.join(results_dir, "*codec-superb-tiny*evaluation_results*.json")
+    for path in sorted(glob.glob(pattern)):
         with open(path) as f:
             data = json.load(f)
         for model, metrics in data.items():
+            if model.startswith(EXCLUDED_MODEL_PREFIXES):
+                continue
             if is_completed_result(metrics):
                 completed.add(model)
     return completed
@@ -41,6 +47,7 @@ def main():
     parser.add_argument("--shard_index", type=int, default=0)
     parser.add_argument("--cache_dir", default=None)
     parser.add_argument("--output_suffix", default=None)
+    parser.add_argument("--output_dir", default=DEFAULT_RESULTS_DIR)
     parser.add_argument("--keep_cache", action="store_true")
     args = parser.parse_args()
 
@@ -49,11 +56,17 @@ def main():
     if args.shard_index < 0 or args.shard_index >= args.num_shards:
         raise ValueError("--shard_index must be in [0, num_shards)")
 
-    completed = collect_completed_models()
+    completed = collect_completed_models(args.output_dir)
     if args.models:
-        models = [model for model in args.models if model not in completed]
+        models = [
+            model for model in args.models
+            if model not in completed and not model.startswith(EXCLUDED_MODEL_PREFIXES)
+        ]
     else:
-        models = sorted(set(list_codec()) - completed)
+        models = sorted(
+            model for model in set(list_codec()) - completed
+            if not model.startswith(EXCLUDED_MODEL_PREFIXES)
+        )
 
     if args.num_shards > 1:
         models = [model for idx, model in enumerate(models) if idx % args.num_shards == args.shard_index]
@@ -71,7 +84,11 @@ def main():
         os.environ.setdefault(name, thread_limit)
 
     print(f"Models to evaluate ({len(models)}): {models}", flush=True)
-    print(f"max_workers={args.max_workers}, chunksize={args.chunksize}, cache_dir={cache_dir}, output_suffix={output_suffix}", flush=True)
+    print(
+        f"max_workers={args.max_workers}, chunksize={args.chunksize}, "
+        f"cache_dir={cache_dir}, output_dir={args.output_dir}, output_suffix={output_suffix}",
+        flush=True,
+    )
     if not models:
         return
 
@@ -89,6 +106,7 @@ def main():
             cleanup_cache=not args.keep_cache,
             cache_dir=cache_dir,
             output_suffix=output_suffix,
+            output_dir=args.output_dir,
         )
     finally:
         if not args.keep_cache:
