@@ -11,3 +11,4 @@ sq_codec
 psutil
 praat-parselmouth
 torchmetrics
+spine-codec
